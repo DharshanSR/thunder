@@ -83,3 +83,22 @@ CREATE INDEX idx_user_indexed_attributes_user ON USER_INDEXED_ATTRIBUTES (USER_I
 
 -- Index for deployment isolation
 CREATE INDEX idx_user_indexed_attributes_deployment_id ON USER_INDEXED_ATTRIBUTES (DEPLOYMENT_ID);
+
+-- Table to store User Preferences
+CREATE TABLE USER_PREFERENCE (
+    ID              INTEGER PRIMARY KEY AUTOINCREMENT,
+    DEPLOYMENT_ID   VARCHAR(255) NOT NULL,
+    USER_ID         VARCHAR(36) NOT NULL,
+    PREFERENCE_KEY  VARCHAR(255) NOT NULL,
+    PREFERENCE_VALUE TEXT NOT NULL,
+    CREATED_AT      TEXT DEFAULT (datetime('now')),
+    UPDATED_AT      TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (USER_ID, DEPLOYMENT_ID) REFERENCES USER (USER_ID, DEPLOYMENT_ID) ON DELETE CASCADE,
+    UNIQUE (USER_ID, DEPLOYMENT_ID, PREFERENCE_KEY)
+);
+
+-- Index for deployment isolation on USER_PREFERENCE
+CREATE INDEX idx_user_preference_deployment_id ON USER_PREFERENCE (DEPLOYMENT_ID);
+
+-- Index for user-based preference lookups
+CREATE INDEX idx_user_preference_user ON USER_PREFERENCE (USER_ID, DEPLOYMENT_ID);

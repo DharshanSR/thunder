@@ -39,6 +39,7 @@ import (
 	"github.com/asgardeo/thunder/internal/oauth"
 	"github.com/asgardeo/thunder/internal/observability"
 	"github.com/asgardeo/thunder/internal/ou"
+	"github.com/asgardeo/thunder/internal/preference"
 	"github.com/asgardeo/thunder/internal/resource"
 	"github.com/asgardeo/thunder/internal/role"
 	"github.com/asgardeo/thunder/internal/system/crypto/hash"
@@ -107,6 +108,13 @@ func registerServices(mux *http.ServeMux) jwt.JWTServiceInterface {
 	if err != nil {
 		logger.Fatal("Failed to initialize UserService", log.Error(err))
 	}
+
+	// Initialize preference service
+	_, err = preference.Initialize(mux)
+	if err != nil {
+		logger.Fatal("Failed to initialize PreferenceService", log.Error(err))
+	}
+
 	groupService := group.Initialize(mux, ouService, userService)
 
 	resourceService, err := resource.Initialize(mux, ouService)
