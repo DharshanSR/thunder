@@ -269,6 +269,14 @@ packages:
       pkgname: oumock
       filename: "{{.InterfaceName}}_mock.go"
 
+  github.com/asgardeo/thunder/internal/preference:
+    config:
+      all: true
+      dir: tests/mocks/preferencemock
+      structname: '{{.InterfaceName}}Mock'
+      pkgname: preferencemock
+      filename: "{{.InterfaceName}}_mock.go"
+
   github.com/asgardeo/thunder/internal/flow/core:
     config:
       all: true

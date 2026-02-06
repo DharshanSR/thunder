@@ -55,7 +55,7 @@ func (ph *preferenceHandler) handleGetPreferences(w http.ResponseWriter, r *http
 
 	preferences, svcErr := ph.service.GetPreferencesByUserID(ctx, userID)
 	if svcErr != nil {
-		handleServiceError(w, svcErr)
+		handleError(w, svcErr)
 		return
 	}
 
@@ -67,7 +67,6 @@ func (ph *preferenceHandler) handleGetPreferences(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Error("Failed to encode response", log.Error(err))
-		handleError(w, &ErrorInternalServerErrorAPI)
 	}
 }
 
@@ -92,7 +91,7 @@ func (ph *preferenceHandler) handleGetPreferenceByKey(w http.ResponseWriter, r *
 
 	preference, svcErr := ph.service.GetPreferenceByKey(ctx, userID, key)
 	if svcErr != nil {
-		handleServiceError(w, svcErr)
+		handleError(w, svcErr)
 		return
 	}
 
@@ -105,7 +104,6 @@ func (ph *preferenceHandler) handleGetPreferenceByKey(w http.ResponseWriter, r *
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Error("Failed to encode response", log.Error(err))
-		handleError(w, &ErrorInternalServerErrorAPI)
 	}
 }
 
@@ -136,7 +134,7 @@ func (ph *preferenceHandler) handleUpsertPreferences(w http.ResponseWriter, r *h
 
 	updatedKeys, svcErr := ph.service.UpsertPreferences(ctx, userID, req.Preferences)
 	if svcErr != nil {
-		handleServiceError(w, svcErr)
+		handleError(w, svcErr)
 		return
 	}
 
@@ -148,7 +146,6 @@ func (ph *preferenceHandler) handleUpsertPreferences(w http.ResponseWriter, r *h
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Error("Failed to encode response", log.Error(err))
-		handleError(w, &ErrorInternalServerErrorAPI)
 	}
 }
 
@@ -173,7 +170,7 @@ func (ph *preferenceHandler) handleDeletePreference(w http.ResponseWriter, r *ht
 
 	svcErr := ph.service.DeletePreference(ctx, userID, key)
 	if svcErr != nil {
-		handleServiceError(w, svcErr)
+		handleError(w, svcErr)
 		return
 	}
 
@@ -185,29 +182,37 @@ func (ph *preferenceHandler) handleDeletePreference(w http.ResponseWriter, r *ht
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Error("Failed to encode response", log.Error(err))
-		handleError(w, &ErrorInternalServerErrorAPI)
 	}
 }
 
-// handleError writes an API error response.
-func handleError(w http.ResponseWriter, apiError *apierror.ErrorResponse) {
+// handleError writes an error response based on service error.
+func handleError(w http.ResponseWriter, svcErr *serviceerror.ServiceError) {
+	var statusCode int
+	if svcErr.Type == serviceerror.ClientErrorType {
+		switch svcErr.Code {
+		case ErrorPreferenceNotFound.Code:
+			statusCode = http.StatusNotFound
+		case ErrorAuthenticationFailed.Code:
+			statusCode = http.StatusUnauthorized
+		default:
+			statusCode = http.StatusBadRequest
+		}
+	} else {
+		statusCode = http.StatusInternalServerError
+	}
+
+	errResp := apierror.ErrorResponse{
+		Code:        svcErr.Code,
+		Message:     svcErr.Error,
+		Description: svcErr.ErrorDescription,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(apiError.Status)
-	_ = json.NewEncoder(w).Encode(apiError)
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(errResp)
 }
 
 // handleServiceError converts a service error to an API error and writes the response.
 func handleServiceError(w http.ResponseWriter, svcErr *serviceerror.ServiceError) {
-	var apiErr *apierror.ErrorResponse
-
-	switch svcErr.Code {
-	case ErrorPreferenceNotFound.Code:
-		apiErr = &ErrorPreferenceNotFoundAPI
-	case ErrorInvalidPreferenceKey.Code, ErrorInvalidPreferenceValue.Code:
-		apiErr = &ErrorInvalidRequest
-	default:
-		apiErr = &ErrorInternalServerErrorAPI
-	}
-
-	handleError(w, apiErr)
+	handleError(w, svcErr)
 }

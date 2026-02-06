@@ -18,14 +18,12 @@
 
 package preference
 
-import "time"
-
 // Preference represents a user preference.
 type Preference struct {
-	Key       string    `json:"key"`
-	Value     string    `json:"value"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Key       string `json:"key"`
+	Value     string `json:"value"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 // GetPreferenceResponse represents the response for getting a single preference.

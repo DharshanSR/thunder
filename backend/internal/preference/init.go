@@ -53,15 +53,35 @@ func Initialize(mux *http.ServeMux) (PreferenceServiceInterface, error) {
 
 // registerRoutes registers HTTP routes for preference operations.
 func registerRoutes(mux *http.ServeMux, handler *preferenceHandler) {
+	// Define CORS options for preference endpoints
+	opts := middleware.CORSOptions{
+		AllowedMethods:   "GET, PUT, DELETE",
+		AllowedHeaders:   "Content-Type, Authorization",
+		AllowCredentials: true,
+	}
+
 	// GET /users/me/preferences - Get all preferences
-	mux.Handle("GET /users/me/preferences", middleware.WithCORS(http.HandlerFunc(handler.handleGetPreferences)))
+	mux.HandleFunc(middleware.WithCORS("GET /users/me/preferences", handler.handleGetPreferences, opts))
 
 	// GET /users/me/preferences/{key} - Get a specific preference
-	mux.Handle("GET /users/me/preferences/{key...}", middleware.WithCORS(http.HandlerFunc(handler.handleGetPreferenceByKey)))
+	mux.HandleFunc(middleware.WithCORS("GET /users/me/preferences/", func(w http.ResponseWriter, r *http.Request) {
+		handler.handleGetPreferenceByKey(w, r)
+	}, opts))
 
 	// PUT /users/me/preferences - Create or update preferences
-	mux.Handle("PUT /users/me/preferences", middleware.WithCORS(http.HandlerFunc(handler.handleUpsertPreferences)))
+	mux.HandleFunc(middleware.WithCORS("PUT /users/me/preferences", handler.handleUpsertPreferences, opts))
 
 	// DELETE /users/me/preferences/{key} - Delete a preference
-	mux.Handle("DELETE /users/me/preferences/{key...}", middleware.WithCORS(http.HandlerFunc(handler.handleDeletePreference)))
+	mux.HandleFunc(middleware.WithCORS("DELETE /users/me/preferences/", func(w http.ResponseWriter, r *http.Request) {
+		handler.handleDeletePreference(w, r)
+	}, opts))
+
+	// OPTIONS for CORS preflight
+	mux.HandleFunc(middleware.WithCORS("OPTIONS /users/me/preferences", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}, opts))
+
+	mux.HandleFunc(middleware.WithCORS("OPTIONS /users/me/preferences/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}, opts))
 }

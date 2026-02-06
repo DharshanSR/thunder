@@ -149,6 +149,14 @@ packages:
       pkgname: ou
       filename: "{{.InterfaceName}}_mock_test.go"
 
+  github.com/asgardeo/thunder/internal/preference:
+    config:
+      all: true
+      dir: internal/preference
+      structname: '{{.InterfaceName}}Mock'
+      pkgname: preference
+      filename: "{{.InterfaceName}}_mock_test.go"
+
   github.com/asgardeo/thunder/internal/system/security:
     config:
       all: true

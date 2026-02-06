@@ -19,54 +19,45 @@
 package preference
 
 import (
-	apierror "github.com/asgardeo/thunder/internal/system/error/apierror"
 	"github.com/asgardeo/thunder/internal/system/error/serviceerror"
 )
 
 // Service error constants.
 var (
 	ErrorPreferenceNotFound = serviceerror.ServiceError{
-		Code:  "PREF-4001",
-		Type:  serviceerror.ClientErrorType,
-		Error: "Preference not found",
+		Code:             "PREF-4001",
+		Type:             serviceerror.ClientErrorType,
+		Error:            "Preference not found",
+		ErrorDescription: "The requested preference does not exist",
 	}
 	ErrorInvalidPreferenceKey = serviceerror.ServiceError{
-		Code:  "PREF-4002",
-		Type:  serviceerror.ClientErrorType,
-		Error: "Invalid preference key",
+		Code:             "PREF-4002",
+		Type:             serviceerror.ClientErrorType,
+		Error:            "Invalid preference key",
+		ErrorDescription: "The preference key is invalid or exceeds maximum length",
 	}
 	ErrorInvalidPreferenceValue = serviceerror.ServiceError{
-		Code:  "PREF-4003",
-		Type:  serviceerror.ClientErrorType,
-		Error: "Invalid preference value",
+		Code:             "PREF-4003",
+		Type:             serviceerror.ClientErrorType,
+		Error:            "Invalid preference value",
+		ErrorDescription: "The preference value exceeds maximum length",
+	}
+	ErrorAuthenticationFailed = serviceerror.ServiceError{
+		Code:             "PREF-4000",
+		Type:             serviceerror.ClientErrorType,
+		Error:            "Authentication failed",
+		ErrorDescription: "User authentication is required",
+	}
+	ErrorInvalidRequest = serviceerror.ServiceError{
+		Code:             "PREF-4004",
+		Type:             serviceerror.ClientErrorType,
+		Error:            "Invalid request",
+		ErrorDescription: "The request is invalid or missing required fields",
 	}
 	ErrorInternalServerError = serviceerror.ServiceError{
-		Code:  "PREF-5000",
-		Type:  serviceerror.ServerErrorType,
-		Error: "Internal server error",
-	}
-)
-
-// API error constants.
-var (
-	ErrorAuthenticationFailed = apierror.ErrorResponse{
-		Code:    "PREF-4000",
-		Message: "Authentication failed",
-		Status:  401,
-	}
-	ErrorPreferenceNotFoundAPI = apierror.ErrorResponse{
-		Code:    "PREF-4001",
-		Message: "Preference not found",
-		Status:  404,
-	}
-	ErrorInvalidRequest = apierror.ErrorResponse{
-		Code:    "PREF-4002",
-		Message: "Invalid request",
-		Status:  400,
-	}
-	ErrorInternalServerErrorAPI = apierror.ErrorResponse{
-		Code:    "PREF-5000",
-		Message: "Internal server error",
-		Status:  500,
+		Code:             "PREF-5000",
+		Type:             serviceerror.ServerErrorType,
+		Error:            "Internal server error",
+		ErrorDescription: "An unexpected error occurred while processing the request",
 	}
 )

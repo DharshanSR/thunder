@@ -20,8 +20,8 @@ package preference
 
 import (
 	"context"
-	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/asgardeo/thunder/internal/system/config"
 	"github.com/asgardeo/thunder/internal/system/database/provider"
@@ -42,85 +42,61 @@ type preferenceStoreInterface interface {
 
 // preferenceStore implements the preferenceStoreInterface.
 type preferenceStore struct {
-	dbClient provider.DBClientInterface
+	dbClient     provider.DBClientInterface
+	deploymentID string
 }
 
 // newPreferenceStore creates a new instance of preferenceStore.
 func newPreferenceStore() (*preferenceStore, error) {
+	runtime := config.GetThunderRuntime()
 	dbClient, err := provider.GetDBProvider().GetUserDBClient()
 	if err != nil {
 		return nil, err
 	}
 
 	return &preferenceStore{
-		dbClient: dbClient,
+		dbClient:     dbClient,
+		deploymentID: runtime.Config.Server.Identifier,
 	}, nil
 }
 
 // GetPreferenceByKey retrieves a single preference by user ID and key.
 func (ps *preferenceStore) GetPreferenceByKey(ctx context.Context, userID, key string) (*Preference, error) {
-	query, err := ps.dbClient.GetQuery(queryGetPreferenceByKey)
+	results, err := ps.dbClient.QueryContext(ctx, queryGetPreferenceByKey, userID, key, ps.deploymentID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
 
-	deploymentID := config.GetThunderRuntime().GetDeploymentID()
-
-	var preference Preference
-	err = ps.dbClient.QueryRowContext(ctx, query, userID, key, deploymentID).Scan(
-		&preference.Key,
-		&preference.Value,
-		&preference.CreatedAt,
-		&preference.UpdatedAt,
-	)
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrPreferenceNotFound
-		}
-		return nil, err
+	if len(results) == 0 {
+		return nil, ErrPreferenceNotFound
 	}
 
-	return &preference, nil
+	preference := &Preference{
+		Key:       results[0]["PREFERENCE_KEY"].(string),
+		Value:     results[0]["PREFERENCE_VALUE"].(string),
+		CreatedAt: results[0]["CREATED_AT"].(string),
+		UpdatedAt: results[0]["UPDATED_AT"].(string),
+	}
+
+	return preference, nil
 }
 
 // GetPreferencesByUserID retrieves all preferences for a user.
 func (ps *preferenceStore) GetPreferencesByUserID(ctx context.Context, userID string) ([]Preference, error) {
-	query, err := ps.dbClient.GetQuery(queryGetPreferencesByUserID)
+	results, err := ps.dbClient.QueryContext(ctx, queryGetPreferencesByUserID, userID, ps.deploymentID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
 
-	deploymentID := config.GetThunderRuntime().GetDeploymentID()
-
-	rows, err := ps.dbClient.QueryContext(ctx, query, userID, deploymentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var preferences []Preference
-	for rows.Next() {
-		var preference Preference
-		err := rows.Scan(
-			&preference.Key,
-			&preference.Value,
-			&preference.CreatedAt,
-			&preference.UpdatedAt,
-		)
-		if err != nil {
-			return nil, err
+	preferences := make([]Preference, 0, len(results))
+	for _, row := range results {
+		preference := Preference{
+			Key:       row["PREFERENCE_KEY"].(string),
+			Value:     row["PREFERENCE_VALUE"].(string),
+			CreatedAt: row["CREATED_AT"].(string),
+			UpdatedAt: row["UPDATED_AT"].(string),
 		}
 		preferences = append(preferences, preference)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	// Return empty slice instead of nil for consistency
-	if preferences == nil {
-		preferences = []Preference{}
 	}
 
 	return preferences, nil
@@ -128,34 +104,18 @@ func (ps *preferenceStore) GetPreferencesByUserID(ctx context.Context, userID st
 
 // UpsertPreference creates or updates a preference.
 func (ps *preferenceStore) UpsertPreference(ctx context.Context, userID, key, value string) error {
-	query, err := ps.dbClient.GetQuery(queryUpsertPreference)
+	_, err := ps.dbClient.ExecuteContext(ctx, queryUpsertPreference, userID, key, value, ps.deploymentID)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to upsert preference: %w", err)
 	}
-
-	deploymentID := config.GetThunderRuntime().GetDeploymentID()
-
-	_, err = ps.dbClient.ExecContext(ctx, query, userID, key, value, deploymentID)
-	return err
+	return nil
 }
 
 // DeletePreference deletes a preference by user ID and key.
 func (ps *preferenceStore) DeletePreference(ctx context.Context, userID, key string) error {
-	query, err := ps.dbClient.GetQuery(queryDeletePreference)
+	rowsAffected, err := ps.dbClient.ExecuteContext(ctx, queryDeletePreference, userID, key, ps.deploymentID)
 	if err != nil {
-		return err
-	}
-
-	deploymentID := config.GetThunderRuntime().GetDeploymentID()
-
-	result, err := ps.dbClient.ExecContext(ctx, query, userID, key, deploymentID)
-	if err != nil {
-		return err
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
+		return fmt.Errorf("failed to delete preference: %w", err)
 	}
 
 	if rowsAffected == 0 {

@@ -22,50 +22,34 @@ import (
 	"github.com/asgardeo/thunder/internal/system/database/model"
 )
 
-// Database query constants.
-const (
-	queryIDGetPreferenceByKey     = "get_preference_by_key"
-	queryIDGetPreferencesByUserID = "get_preferences_by_user_id"
-	queryIDUpsertPreference       = "upsert_preference"
-	queryIDDeletePreference       = "delete_preference"
-)
-
 // Query definitions.
 var (
 	queryGetPreferenceByKey = model.DBQuery{
-		ID: queryIDGetPreferenceByKey,
-		Queries: map[string]string{
-			model.DefaultDBType: `SELECT PREFERENCE_KEY, PREFERENCE_VALUE, CREATED_AT, UPDATED_AT 
-				FROM USER_PREFERENCE 
-				WHERE USER_ID = $1 AND PREFERENCE_KEY = $2 AND DEPLOYMENT_ID = $3`,
-		},
+		ID: "PREF-01",
+		Query: `SELECT PREFERENCE_KEY, PREFERENCE_VALUE, CREATED_AT, UPDATED_AT 
+			FROM USER_PREFERENCE 
+			WHERE USER_ID = $1 AND PREFERENCE_KEY = $2 AND DEPLOYMENT_ID = $3`,
 	}
 
 	queryGetPreferencesByUserID = model.DBQuery{
-		ID: queryIDGetPreferencesByUserID,
-		Queries: map[string]string{
-			model.DefaultDBType: `SELECT PREFERENCE_KEY, PREFERENCE_VALUE, CREATED_AT, UPDATED_AT 
-				FROM USER_PREFERENCE 
-				WHERE USER_ID = $1 AND DEPLOYMENT_ID = $2
-				ORDER BY PREFERENCE_KEY ASC`,
-		},
+		ID: "PREF-02",
+		Query: `SELECT PREFERENCE_KEY, PREFERENCE_VALUE, CREATED_AT, UPDATED_AT 
+			FROM USER_PREFERENCE 
+			WHERE USER_ID = $1 AND DEPLOYMENT_ID = $2
+			ORDER BY PREFERENCE_KEY ASC`,
 	}
 
 	queryUpsertPreference = model.DBQuery{
-		ID: queryIDUpsertPreference,
-		Queries: map[string]string{
-			model.DefaultDBType: `INSERT INTO USER_PREFERENCE (USER_ID, PREFERENCE_KEY, PREFERENCE_VALUE, DEPLOYMENT_ID) 
-				VALUES ($1, $2, $3, $4) 
-				ON CONFLICT (USER_ID, DEPLOYMENT_ID, PREFERENCE_KEY) 
-				DO UPDATE SET PREFERENCE_VALUE = EXCLUDED.PREFERENCE_VALUE, UPDATED_AT = CURRENT_TIMESTAMP`,
-		},
+		ID: "PREF-03",
+		Query: `INSERT INTO USER_PREFERENCE (USER_ID, PREFERENCE_KEY, PREFERENCE_VALUE, DEPLOYMENT_ID) 
+			VALUES ($1, $2, $3, $4) 
+			ON CONFLICT (USER_ID, DEPLOYMENT_ID, PREFERENCE_KEY) 
+			DO UPDATE SET PREFERENCE_VALUE = EXCLUDED.PREFERENCE_VALUE, UPDATED_AT = CURRENT_TIMESTAMP`,
 	}
 
 	queryDeletePreference = model.DBQuery{
-		ID: queryIDDeletePreference,
-		Queries: map[string]string{
-			model.DefaultDBType: `DELETE FROM USER_PREFERENCE 
-				WHERE USER_ID = $1 AND PREFERENCE_KEY = $2 AND DEPLOYMENT_ID = $3`,
-		},
+		ID: "PREF-04",
+		Query: `DELETE FROM USER_PREFERENCE 
+			WHERE USER_ID = $1 AND PREFERENCE_KEY = $2 AND DEPLOYMENT_ID = $3`,
 	}
 )
