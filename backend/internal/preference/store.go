@@ -71,11 +71,18 @@ func (ps *preferenceStore) GetPreferenceByKey(ctx context.Context, userID, key s
 		return nil, ErrPreferenceNotFound
 	}
 
+	row := results[0]
 	preference := &Preference{
-		Key:       results[0]["PREFERENCE_KEY"].(string),
-		Value:     results[0]["PREFERENCE_VALUE"].(string),
-		CreatedAt: results[0]["CREATED_AT"].(string),
-		UpdatedAt: results[0]["UPDATED_AT"].(string),
+		Key:   toString(row["preference_key"]),
+		Value: toString(row["preference_value"]),
+	}
+
+	// Handle timestamps which might be returned as different types
+	if createdAt := row["created_at"]; createdAt != nil {
+		preference.CreatedAt = toString(createdAt)
+	}
+	if updatedAt := row["updated_at"]; updatedAt != nil {
+		preference.UpdatedAt = toString(updatedAt)
 	}
 
 	return preference, nil
@@ -91,11 +98,18 @@ func (ps *preferenceStore) GetPreferencesByUserID(ctx context.Context, userID st
 	preferences := make([]Preference, 0, len(results))
 	for _, row := range results {
 		preference := Preference{
-			Key:       row["PREFERENCE_KEY"].(string),
-			Value:     row["PREFERENCE_VALUE"].(string),
-			CreatedAt: row["CREATED_AT"].(string),
-			UpdatedAt: row["UPDATED_AT"].(string),
+			Key:   toString(row["preference_key"]),
+			Value: toString(row["preference_value"]),
 		}
+		
+		// Handle timestamps which might be returned as different types
+		if createdAt := row["created_at"]; createdAt != nil {
+			preference.CreatedAt = toString(createdAt)
+		}
+		if updatedAt := row["updated_at"]; updatedAt != nil {
+			preference.UpdatedAt = toString(updatedAt)
+		}
+		
 		preferences = append(preferences, preference)
 	}
 
@@ -123,4 +137,15 @@ func (ps *preferenceStore) DeletePreference(ctx context.Context, userID, key str
 	}
 
 	return nil
+}
+
+// toString safely converts an interface{} to a string.
+func toString(val interface{}) string {
+	if val == nil {
+		return ""
+	}
+	if str, ok := val.(string); ok {
+		return str
+	}
+	return fmt.Sprintf("%v", val)
 }
