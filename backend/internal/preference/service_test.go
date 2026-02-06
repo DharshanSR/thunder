@@ -26,8 +26,12 @@ import (
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+)
 
-	"github.com/asgardeo/thunder/internal/system/database/transaction"
+const (
+	testUserID = "test-user-id"
+	testKey    = "theme"
+	testValue  = "dark"
 )
 
 type PreferenceServiceTestSuite struct {
@@ -53,10 +57,10 @@ func (suite *PreferenceServiceTestSuite) TestGetPreferenceByKey_Success() {
 	suite.mockStore.On("GetPreferenceByKey", ctx, testUserID, testKey).Return(expectedPreference, nil)
 
 	// Execute
-	preference, err := suite.service.GetPreferenceByKey(ctx, testUserID, testKey)
+	preference, svcErr := suite.service.GetPreferenceByKey(ctx, testUserID, testKey)
 
 	// Assert
-	suite.NoError(err)
+	suite.Nil(svcErr)
 	suite.NotNil(preference)
 	suite.Equal(expectedPreference.Key, preference.Key)
 	suite.Equal(expectedPreference.Value, preference.Value)
@@ -69,11 +73,11 @@ func (suite *PreferenceServiceTestSuite) TestGetPreferenceByKey_NotFound() {
 	suite.mockStore.On("GetPreferenceByKey", ctx, testUserID, testKey).Return(nil, ErrPreferenceNotFound)
 
 	// Execute
-	preference, err := suite.service.GetPreferenceByKey(ctx, testUserID, testKey)
+	preference, svcErr := suite.service.GetPreferenceByKey(ctx, testUserID, testKey)
 
 	// Assert
-	suite.Error(err)
-	suite.Equal(ErrorPreferenceNotFound.Code, err.Code)
+	suite.NotNil(svcErr)
+	suite.Equal(ErrorPreferenceNotFound.Code, svcErr.Code)
 	suite.Nil(preference)
 	suite.mockStore.AssertExpectations(suite.T())
 }
@@ -82,20 +86,20 @@ func (suite *PreferenceServiceTestSuite) TestGetPreferenceByKey_InvalidKey() {
 	ctx := context.Background()
 
 	// Test with empty key
-	preference, err := suite.service.GetPreferenceByKey(ctx, testUserID, "")
+	preference, svcErr := suite.service.GetPreferenceByKey(ctx, testUserID, "")
 
 	// Assert
-	suite.Error(err)
-	suite.Equal(ErrorInvalidPreferenceKey.Code, err.Code)
+	suite.NotNil(svcErr)
+	suite.Equal(ErrorInvalidPreferenceKey.Code, svcErr.Code)
 	suite.Nil(preference)
 
 	// Test with key that's too long
 	longKey := strings.Repeat("a", maxPreferenceKeyLength+1)
-	preference, err = suite.service.GetPreferenceByKey(ctx, testUserID, longKey)
+	preference, svcErr = suite.service.GetPreferenceByKey(ctx, testUserID, longKey)
 
 	// Assert
-	suite.Error(err)
-	suite.Equal(ErrorInvalidPreferenceKey.Code, err.Code)
+	suite.NotNil(svcErr)
+	suite.Equal(ErrorInvalidPreferenceKey.Code, svcErr.Code)
 	suite.Nil(preference)
 }
 
@@ -105,11 +109,11 @@ func (suite *PreferenceServiceTestSuite) TestGetPreferenceByKey_StoreError() {
 	suite.mockStore.On("GetPreferenceByKey", ctx, testUserID, testKey).Return(nil, errors.New("database error"))
 
 	// Execute
-	preference, err := suite.service.GetPreferenceByKey(ctx, testUserID, testKey)
+	preference, svcErr := suite.service.GetPreferenceByKey(ctx, testUserID, testKey)
 
 	// Assert
-	suite.Error(err)
-	suite.Equal(ErrorInternalServerError.Code, err.Code)
+	suite.NotNil(svcErr)
+	suite.Equal(ErrorInternalServerError.Code, svcErr.Code)
 	suite.Nil(preference)
 	suite.mockStore.AssertExpectations(suite.T())
 }
@@ -124,10 +128,10 @@ func (suite *PreferenceServiceTestSuite) TestGetPreferencesByUserID_Success() {
 	suite.mockStore.On("GetPreferencesByUserID", ctx, testUserID).Return(expectedPreferences, nil)
 
 	// Execute
-	preferences, err := suite.service.GetPreferencesByUserID(ctx, testUserID)
+	preferences, svcErr := suite.service.GetPreferencesByUserID(ctx, testUserID)
 
 	// Assert
-	suite.NoError(err)
+	suite.Nil(svcErr)
 	suite.NotNil(preferences)
 	suite.Len(preferences, 2)
 	suite.mockStore.AssertExpectations(suite.T())
@@ -139,10 +143,10 @@ func (suite *PreferenceServiceTestSuite) TestGetPreferencesByUserID_Empty() {
 	suite.mockStore.On("GetPreferencesByUserID", ctx, testUserID).Return([]Preference{}, nil)
 
 	// Execute
-	preferences, err := suite.service.GetPreferencesByUserID(ctx, testUserID)
+	preferences, svcErr := suite.service.GetPreferencesByUserID(ctx, testUserID)
 
 	// Assert
-	suite.NoError(err)
+	suite.Nil(svcErr)
 	suite.NotNil(preferences)
 	suite.Len(preferences, 0)
 	suite.mockStore.AssertExpectations(suite.T())
@@ -154,11 +158,11 @@ func (suite *PreferenceServiceTestSuite) TestGetPreferencesByUserID_StoreError()
 	suite.mockStore.On("GetPreferencesByUserID", ctx, testUserID).Return(nil, errors.New("database error"))
 
 	// Execute
-	preferences, err := suite.service.GetPreferencesByUserID(ctx, testUserID)
+	preferences, svcErr := suite.service.GetPreferencesByUserID(ctx, testUserID)
 
 	// Assert
-	suite.Error(err)
-	suite.Equal(ErrorInternalServerError.Code, err.Code)
+	suite.NotNil(svcErr)
+	suite.Equal(ErrorInternalServerError.Code, svcErr.Code)
 	suite.Nil(preferences)
 	suite.mockStore.AssertExpectations(suite.T())
 }
@@ -182,10 +186,10 @@ func (suite *PreferenceServiceTestSuite) TestUpsertPreferences_Success() {
 	suite.mockStore.On("UpsertPreference", ctx, testUserID, "key2", "value2").Return(nil)
 
 	// Execute
-	updatedKeys, err := suite.service.UpsertPreferences(ctx, testUserID, preferences)
+	updatedKeys, svcErr := suite.service.UpsertPreferences(ctx, testUserID, preferences)
 
 	// Assert
-	suite.NoError(err)
+	suite.Nil(svcErr)
 	suite.NotNil(updatedKeys)
 	suite.Len(updatedKeys, 2)
 	suite.mockStore.AssertExpectations(suite.T())
@@ -199,11 +203,11 @@ func (suite *PreferenceServiceTestSuite) TestUpsertPreferences_InvalidKey() {
 	}
 
 	// Execute
-	updatedKeys, err := suite.service.UpsertPreferences(ctx, testUserID, preferences)
+	updatedKeys, svcErr := suite.service.UpsertPreferences(ctx, testUserID, preferences)
 
 	// Assert
-	suite.Error(err)
-	suite.Equal(ErrorInvalidPreferenceKey.Code, err.Code)
+	suite.NotNil(svcErr)
+	suite.Equal(ErrorInvalidPreferenceKey.Code, svcErr.Code)
 	suite.Nil(updatedKeys)
 }
 
@@ -215,11 +219,11 @@ func (suite *PreferenceServiceTestSuite) TestUpsertPreferences_InvalidValue() {
 	}
 
 	// Execute
-	updatedKeys, err := suite.service.UpsertPreferences(ctx, testUserID, preferences)
+	updatedKeys, svcErr := suite.service.UpsertPreferences(ctx, testUserID, preferences)
 
 	// Assert
-	suite.Error(err)
-	suite.Equal(ErrorInvalidPreferenceValue.Code, err.Code)
+	suite.NotNil(svcErr)
+	suite.Equal(ErrorInvalidPreferenceValue.Code, svcErr.Code)
 	suite.Nil(updatedKeys)
 }
 
@@ -234,11 +238,11 @@ func (suite *PreferenceServiceTestSuite) TestUpsertPreferences_TransactionError(
 		Return(errors.New("transaction error"))
 
 	// Execute
-	updatedKeys, err := suite.service.UpsertPreferences(ctx, testUserID, preferences)
+	updatedKeys, svcErr := suite.service.UpsertPreferences(ctx, testUserID, preferences)
 
 	// Assert
-	suite.Error(err)
-	suite.Equal(ErrorInternalServerError.Code, err.Code)
+	suite.NotNil(svcErr)
+	suite.Equal(ErrorInternalServerError.Code, svcErr.Code)
 	suite.Nil(updatedKeys)
 	suite.transactioner.AssertExpectations(suite.T())
 }
@@ -249,10 +253,10 @@ func (suite *PreferenceServiceTestSuite) TestDeletePreference_Success() {
 	suite.mockStore.On("DeletePreference", ctx, testUserID, testKey).Return(nil)
 
 	// Execute
-	err := suite.service.DeletePreference(ctx, testUserID, testKey)
+	svcErr := suite.service.DeletePreference(ctx, testUserID, testKey)
 
 	// Assert
-	suite.NoError(err)
+	suite.Nil(svcErr)
 	suite.mockStore.AssertExpectations(suite.T())
 }
 
@@ -262,11 +266,11 @@ func (suite *PreferenceServiceTestSuite) TestDeletePreference_NotFound() {
 	suite.mockStore.On("DeletePreference", ctx, testUserID, testKey).Return(ErrPreferenceNotFound)
 
 	// Execute
-	err := suite.service.DeletePreference(ctx, testUserID, testKey)
+	svcErr := suite.service.DeletePreference(ctx, testUserID, testKey)
 
 	// Assert
-	suite.Error(err)
-	suite.Equal(ErrorPreferenceNotFound.Code, err.Code)
+	suite.NotNil(svcErr)
+	suite.Equal(ErrorPreferenceNotFound.Code, svcErr.Code)
 	suite.mockStore.AssertExpectations(suite.T())
 }
 
@@ -274,11 +278,11 @@ func (suite *PreferenceServiceTestSuite) TestDeletePreference_InvalidKey() {
 	ctx := context.Background()
 
 	// Execute
-	err := suite.service.DeletePreference(ctx, testUserID, "")
+	svcErr := suite.service.DeletePreference(ctx, testUserID, "")
 
 	// Assert
-	suite.Error(err)
-	suite.Equal(ErrorInvalidPreferenceKey.Code, err.Code)
+	suite.NotNil(svcErr)
+	suite.Equal(ErrorInvalidPreferenceKey.Code, svcErr.Code)
 }
 
 func (suite *PreferenceServiceTestSuite) TestDeletePreference_StoreError() {
@@ -287,11 +291,11 @@ func (suite *PreferenceServiceTestSuite) TestDeletePreference_StoreError() {
 	suite.mockStore.On("DeletePreference", ctx, testUserID, testKey).Return(errors.New("database error"))
 
 	// Execute
-	err := suite.service.DeletePreference(ctx, testUserID, testKey)
+	svcErr := suite.service.DeletePreference(ctx, testUserID, testKey)
 
 	// Assert
-	suite.Error(err)
-	suite.Equal(ErrorInternalServerError.Code, err.Code)
+	suite.NotNil(svcErr)
+	suite.Equal(ErrorInternalServerError.Code, svcErr.Code)
 	suite.mockStore.AssertExpectations(suite.T())
 }
 
@@ -350,9 +354,4 @@ func newTransactionerMock(t *testing.T) *transactionerMock {
 func (m *transactionerMock) Transact(ctx context.Context, fn func(context.Context) error) error {
 	args := m.Called(ctx, fn)
 	return args.Error(0)
-}
-
-func (m *transactionerMock) GetTransactionerInterface() transaction.TransactionerInterface {
-	args := m.Called()
-	return args.Get(0).(transaction.TransactionerInterface)
 }
