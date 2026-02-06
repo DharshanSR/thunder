@@ -211,8 +211,3 @@ func handleError(w http.ResponseWriter, svcErr *serviceerror.ServiceError) {
 	w.WriteHeader(statusCode)
 	_ = json.NewEncoder(w).Encode(errResp)
 }
-
-// handleServiceError converts a service error to an API error and writes the response.
-func handleServiceError(w http.ResponseWriter, svcErr *serviceerror.ServiceError) {
-	handleError(w, svcErr)
-}
