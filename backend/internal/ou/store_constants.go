@@ -37,29 +37,35 @@ var (
 	// queryCreateOrganizationUnit is the query to create a new organization unit.
 	queryCreateOrganizationUnit = dbmodel.DBQuery{
 		ID: "OUQ-OU_MGT-03",
-		Query: `INSERT INTO ORGANIZATION_UNIT (OU_ID, PARENT_ID, HANDLE, NAME, DESCRIPTION, DEPLOYMENT_ID) ` +
-			`VALUES ($1, $2, $3, $4, $5, $6)`,
+		Query: `INSERT INTO ORGANIZATION_UNIT (
+			OU_ID, PARENT_ID, HANDLE, NAME, DESCRIPTION, THEME_ID, LAYOUT_ID, METADATA, DEPLOYMENT_ID
+		) VALUES (
+			$1, $2, $3, $4, $5, $6, $7, $8, $9
+		)`,
 	}
 
 	// queryGetOrganizationUnitByID is the query to get an organization unit by id.
 	queryGetOrganizationUnitByID = dbmodel.DBQuery{
 		ID: "OUQ-OU_MGT-04",
-		Query: `SELECT OU_ID, PARENT_ID, HANDLE, NAME, DESCRIPTION FROM ORGANIZATION_UNIT ` +
-			`WHERE OU_ID = $1 AND DEPLOYMENT_ID = $2`,
+		Query: `SELECT OU_ID, PARENT_ID, HANDLE, NAME, DESCRIPTION, THEME_ID, LAYOUT_ID, METADATA
+		FROM ORGANIZATION_UNIT
+		WHERE OU_ID = $1 AND DEPLOYMENT_ID = $2`,
 	}
 
 	// queryGetRootOrganizationUnitByHandle is the query to get a root organization unit by handle.
 	queryGetRootOrganizationUnitByHandle = dbmodel.DBQuery{
 		ID: "OUQ-OU_MGT-05",
-		Query: `SELECT OU_ID, PARENT_ID, HANDLE, NAME, DESCRIPTION FROM ORGANIZATION_UNIT ` +
-			`WHERE HANDLE = $1 AND PARENT_ID IS NULL AND DEPLOYMENT_ID = $2`,
+		Query: `SELECT OU_ID, PARENT_ID, HANDLE, NAME, DESCRIPTION, THEME_ID, LAYOUT_ID, METADATA
+		FROM ORGANIZATION_UNIT
+		WHERE HANDLE = $1 AND PARENT_ID IS NULL AND DEPLOYMENT_ID = $2`,
 	}
 
 	// queryGetOrganizationUnitByHandle is the query to get an organization unit by handle and parent.
 	queryGetOrganizationUnitByHandle = dbmodel.DBQuery{
 		ID: "OUQ-OU_MGT-06",
-		Query: `SELECT OU_ID, PARENT_ID, HANDLE, NAME, DESCRIPTION FROM ORGANIZATION_UNIT ` +
-			`WHERE HANDLE = $1 AND PARENT_ID = $2 AND DEPLOYMENT_ID = $3`,
+		Query: `SELECT OU_ID, PARENT_ID, HANDLE, NAME, DESCRIPTION, THEME_ID, LAYOUT_ID, METADATA
+		FROM ORGANIZATION_UNIT
+		WHERE HANDLE = $1 AND PARENT_ID = $2 AND DEPLOYMENT_ID = $3`,
 	}
 
 	// queryCheckOrganizationUnitExists is the query to check if an organization unit exists.
@@ -71,8 +77,8 @@ var (
 	// queryUpdateOrganizationUnit is the query to update an organization unit.
 	queryUpdateOrganizationUnit = dbmodel.DBQuery{
 		ID: "OUQ-OU_MGT-08",
-		Query: `UPDATE ORGANIZATION_UNIT SET PARENT_ID = $2, HANDLE = $3, NAME = $4, DESCRIPTION = $5 ` +
-			`WHERE OU_ID = $1 AND DEPLOYMENT_ID = $6`,
+		Query: `UPDATE ORGANIZATION_UNIT SET PARENT_ID = $2, HANDLE = $3, NAME = $4, DESCRIPTION = $5, ` +
+			`THEME_ID = $6, LAYOUT_ID = $7, METADATA = $8 WHERE OU_ID = $1 AND DEPLOYMENT_ID = $9`,
 	}
 
 	// queryDeleteOrganizationUnit is the query to delete an organization unit.

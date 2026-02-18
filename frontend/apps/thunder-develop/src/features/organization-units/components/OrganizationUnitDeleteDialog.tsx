@@ -16,10 +16,11 @@
  * under the License.
  */
 
-import {useState, type JSX} from 'react';
+import type {JSX} from 'react';
 import {Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, Alert} from '@wso2/oxygen-ui';
 import {useTranslation} from 'react-i18next';
 import useDeleteOrganizationUnit from '../api/useDeleteOrganizationUnit';
+import type {ApiError} from '../models/api-error';
 
 export interface OrganizationUnitDeleteDialogProps {
   /**
@@ -38,6 +39,21 @@ export interface OrganizationUnitDeleteDialogProps {
    * Callback when the organization unit is successfully deleted
    */
   onSuccess?: () => void;
+  /**
+   * Callback when the deletion fails, receives the error message
+   */
+  onError?: (message: string) => void;
+}
+
+/**
+ * Extracts a user-friendly error message from the API error response.
+ */
+function getErrorMessage(err: Error, fallback: string): string {
+  const {response} = err as Error & {response?: {data?: ApiError}};
+  const description = response?.data?.description ?? null;
+  const message = err.message?.trim() ? err.message : null;
+
+  return description ?? message ?? fallback;
 }
 
 /**
@@ -48,13 +64,12 @@ export default function OrganizationUnitDeleteDialog({
   organizationUnitId,
   onClose,
   onSuccess = undefined,
+  onError = undefined,
 }: OrganizationUnitDeleteDialogProps): JSX.Element {
   const {t} = useTranslation();
   const deleteOrganizationUnit = useDeleteOrganizationUnit();
-  const [error, setError] = useState<string | null>(null);
 
   const handleCancel = (): void => {
-    setError(null);
     onClose();
   };
 
@@ -63,29 +78,25 @@ export default function OrganizationUnitDeleteDialog({
 
     deleteOrganizationUnit.mutate(organizationUnitId, {
       onSuccess: (): void => {
-        setError(null);
         onClose();
         onSuccess?.();
       },
       onError: (err: Error) => {
-        setError(err.message ?? t('organizationUnits:delete.error'));
+        const message = getErrorMessage(err, t('organizationUnits:delete.dialog.error'));
+        onClose();
+        onError?.(message);
       },
     });
   };
 
   return (
     <Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
-      <DialogTitle>{t('organizationUnits:delete.title')}</DialogTitle>
+      <DialogTitle>{t('organizationUnits:delete.dialog.title')}</DialogTitle>
       <DialogContent>
-        <DialogContentText sx={{mb: 2}}>{t('organizationUnits:delete.message')}</DialogContentText>
+        <DialogContentText sx={{mb: 2}}>{t('organizationUnits:delete.dialog.message')}</DialogContentText>
         <Alert severity="warning" sx={{mb: 2}}>
-          {t('organizationUnits:delete.disclaimer')}
+          {t('organizationUnits:delete.dialog.disclaimer')}
         </Alert>
-        {error && (
-          <Alert severity="error" sx={{mt: 2}}>
-            {error}
-          </Alert>
-        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={handleCancel} disabled={deleteOrganizationUnit.isPending}>

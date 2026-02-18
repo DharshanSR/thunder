@@ -98,6 +98,10 @@ func (ous *organizationUnitService) GetOrganizationUnitList(limit, offset int) (
 
 	ouList, err := ous.ouStore.GetOrganizationUnitList(limit, offset)
 	if err != nil {
+		// Check if it's a limit exceeded error
+		if errors.Is(err, ErrResultLimitExceededInCompositeMode) {
+			return nil, &ErrorResultLimitExceeded
+		}
 		logger.Error("Failed to list organization units", log.Error(err))
 		return nil, &ErrorInternalServerError
 	}
@@ -169,11 +173,17 @@ func (ous *organizationUnitService) CreateOrganizationUnit(
 	}
 
 	ou := OrganizationUnit{
-		ID:          ouID,
-		Handle:      request.Handle,
-		Name:        request.Name,
-		Description: request.Description,
-		Parent:      request.Parent,
+		ID:              ouID,
+		Handle:          request.Handle,
+		Name:            request.Name,
+		Description:     request.Description,
+		Parent:          request.Parent,
+		ThemeID:         request.ThemeID,
+		LayoutID:        request.LayoutID,
+		LogoURL:         request.LogoURL,
+		TosURI:          request.TosURI,
+		PolicyURI:       request.PolicyURI,
+		CookiePolicyURI: request.CookiePolicyURI,
 	}
 
 	err = ous.ouStore.CreateOrganizationUnit(ou)
@@ -322,11 +332,6 @@ func (ous *organizationUnitService) UpdateOrganizationUnitByPath(
 		return OrganizationUnit{}, err
 	}
 
-	// Fail if store is in declarative mode (OU-specific check)
-	if isDeclarativeModeEnabled() {
-		return OrganizationUnit{}, &ErrorCannotModifyDeclarativeResource
-	}
-
 	handles, serviceError := validateAndProcessHandlePath(handlePath)
 	if serviceError != nil {
 		return OrganizationUnit{}, serviceError
@@ -339,6 +344,11 @@ func (ous *organizationUnitService) UpdateOrganizationUnitByPath(
 		}
 		logger.Error("Failed to get organization unit by path", log.Error(err))
 		return OrganizationUnit{}, &ErrorInternalServerError
+	}
+
+	// Check if OU is declarative (for composite mode)
+	if ous.ouStore.IsOrganizationUnitDeclarative(existingOU.ID) {
+		return OrganizationUnit{}, &ErrorCannotModifyDeclarativeResource
 	}
 
 	updatedOU, serviceError := ous.updateOUInternal(existingOU.ID, request, existingOU, logger)
@@ -384,9 +394,11 @@ func (ous *organizationUnitService) updateOUInternal(
 		return OrganizationUnit{}, err
 	}
 
+	parentChanged := !stringPtrEqual(existingOU.Parent, request.Parent)
+
 	var nameConflict bool
 	var err error
-	if existingOU.Parent != request.Parent || existingOU.Name != request.Name {
+	if parentChanged || existingOU.Name != request.Name {
 		nameConflict, err = ous.ouStore.CheckOrganizationUnitNameConflict(request.Name, request.Parent)
 		if err != nil {
 			logger.Error("Failed to check organization unit name conflict", log.Error(err))
@@ -399,7 +411,7 @@ func (ous *organizationUnitService) updateOUInternal(
 	}
 
 	var handleConflict bool
-	if existingOU.Parent != request.Parent || existingOU.Handle != request.Handle {
+	if parentChanged || existingOU.Handle != request.Handle {
 		handleConflict, err = ous.ouStore.CheckOrganizationUnitHandleConflict(request.Handle, request.Parent)
 		if err != nil {
 			logger.Error("Failed to check organization unit handle conflict", log.Error(err))
@@ -412,11 +424,17 @@ func (ous *organizationUnitService) updateOUInternal(
 	}
 
 	updatedOU := OrganizationUnit{
-		ID:          existingOU.ID,
-		Handle:      request.Handle,
-		Name:        request.Name,
-		Description: request.Description,
-		Parent:      request.Parent,
+		ID:              existingOU.ID,
+		Handle:          request.Handle,
+		Name:            request.Name,
+		Description:     request.Description,
+		Parent:          request.Parent,
+		ThemeID:         request.ThemeID,
+		LayoutID:        request.LayoutID,
+		LogoURL:         request.LogoURL,
+		TosURI:          request.TosURI,
+		PolicyURI:       request.PolicyURI,
+		CookiePolicyURI: request.CookiePolicyURI,
 	}
 
 	err = ous.ouStore.UpdateOrganizationUnit(updatedOU)
@@ -468,11 +486,6 @@ func (ous *organizationUnitService) DeleteOrganizationUnitByPath(handlePath stri
 		return err
 	}
 
-	// Fail if store is in declarative mode (OU-specific check)
-	if isDeclarativeModeEnabled() {
-		return &ErrorCannotModifyDeclarativeResource
-	}
-
 	handles, serviceError := validateAndProcessHandlePath(handlePath)
 	if serviceError != nil {
 		return serviceError
@@ -485,6 +498,11 @@ func (ous *organizationUnitService) DeleteOrganizationUnitByPath(handlePath stri
 		}
 		logger.Error("Failed to get organization unit by path", log.Error(err))
 		return &ErrorInternalServerError
+	}
+
+	// Check if OU is declarative (for composite mode)
+	if ous.ouStore.IsOrganizationUnitDeclarative(existingOU.ID) {
+		return &ErrorCannotModifyDeclarativeResource
 	}
 
 	svcErr := ous.deleteOUInternal(existingOU.ID, logger)
@@ -533,6 +551,7 @@ func (ous *organizationUnitService) GetOrganizationUnitUsers(
 			return ous.ouStore.GetOrganizationUnitUsersList(id, limit, offset)
 		},
 		ous.ouStore.GetOrganizationUnitUsersCount,
+		false, // No composite error mapping for users
 	)
 	if svcErr != nil {
 		return nil, svcErr
@@ -550,6 +569,7 @@ func (ous *organizationUnitService) GetOrganizationUnitGroups(
 			return ous.ouStore.GetOrganizationUnitGroupsList(id, limit, offset)
 		},
 		ous.ouStore.GetOrganizationUnitGroupsCount,
+		false, // No composite error mapping for groups
 	)
 	if svcErr != nil {
 		return nil, svcErr
@@ -567,6 +587,7 @@ func (ous *organizationUnitService) GetOrganizationUnitChildren(
 			return ous.ouStore.GetOrganizationUnitChildrenList(id, limit, offset)
 		},
 		ous.ouStore.GetOrganizationUnitChildrenCount,
+		true, // Map composite limit error for children
 	)
 	if svcErr != nil {
 		return nil, svcErr
@@ -771,10 +792,12 @@ func buildPaginationLinks(limit, offset, totalCount int) []Link {
 
 // getResourceListWithExistenceCheck is a generic function to get resources for an
 // organization unit with existence check.
+// If mapCompositeError is true, it will map ErrResultLimitExceededInCompositeMode to ErrorResultLimitExceeded.
 func (ous *organizationUnitService) getResourceListWithExistenceCheck(
 	id string, limit, offset int, resourceType string,
 	getListFunc func(string, int, int) (interface{}, error),
 	getCountFunc func(string) (int, error),
+	mapCompositeError bool,
 ) (interface{}, int, *serviceerror.ServiceError) {
 	logger := log.GetLogger().With(log.String(log.LoggerKeyComponentName, loggerComponentNameService))
 	logger.Debug("Getting resource for organization unit", log.String("resource_type", resourceType),
@@ -796,6 +819,10 @@ func (ous *organizationUnitService) getResourceListWithExistenceCheck(
 
 	items, err := getListFunc(id, limit, offset)
 	if err != nil {
+		// Map composite limit error if requested
+		if mapCompositeError && errors.Is(err, ErrResultLimitExceededInCompositeMode) {
+			return nil, 0, &ErrorResultLimitExceeded
+		}
 		logger.Error("Failed to list resource", log.String("resource_type", resourceType), log.Error(err))
 		return nil, 0, &ErrorInternalServerError
 	}
@@ -858,4 +885,15 @@ func buildOrganizationUnitListResponse(items interface{}, totalCount, limit, off
 		Links:             buildPaginationLinks(limit, offset, totalCount),
 	}
 	return response, nil
+}
+
+// stringPtrEqual compares two string pointers by their values.
+func stringPtrEqual(a, b *string) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return *a == *b
 }

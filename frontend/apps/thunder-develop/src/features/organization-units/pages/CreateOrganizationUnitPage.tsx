@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com).
+ * Copyright (c) 2025-2026, WSO2 LLC. (https://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -17,7 +17,7 @@
  */
 
 import {useState, useMemo, useRef, type JSX} from 'react';
-import {useNavigate} from 'react-router';
+import {useNavigate, useLocation} from 'react-router';
 import {
   Box,
   Stack,
@@ -31,7 +31,6 @@ import {
   FormLabel,
   Chip,
   useTheme,
-  Autocomplete,
 } from '@wso2/oxygen-ui';
 import {X, Lightbulb} from '@wso2/oxygen-ui-icons-react';
 import {useTranslation} from 'react-i18next';
@@ -40,9 +39,9 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {z} from 'zod';
 import {useLogger} from '@thunder/logger/react';
 import useCreateOrganizationUnit from '../api/useCreateOrganizationUnit';
-import useGetOrganizationUnits from '../api/useGetOrganizationUnits';
-import type {CreateOrganizationUnitRequest, OrganizationUnit} from '../types/organization-units';
-import generateOUNameSuggestions from '../utils/generateOUNameSuggestions';
+import useOrganizationUnit from '../contexts/useOrganizationUnit';
+import type {CreateOrganizationUnitRequest} from '../models/requests';
+import generateOrganizationUnitNameSuggestions from '../utils/generateOrganizationUnitNameSuggestions';
 
 /**
  * Creates a Zod schema for the create organization unit form with i18n support.
@@ -50,12 +49,12 @@ import generateOUNameSuggestions from '../utils/generateOUNameSuggestions';
  */
 const createFormSchema = (t: (key: string) => string) =>
   z.object({
-    name: z.string().trim().min(1, t('organizationUnits:form.validation.nameRequired')),
+    name: z.string().trim().min(1, t('organizationUnits:edit.general.name.validations.required')),
     handle: z
       .string()
       .trim()
-      .min(1, t('organizationUnits:form.validation.handleRequired'))
-      .regex(/^[a-z0-9-]+$/, t('organizationUnits:form.validation.handleFormat')),
+      .min(1, t('organizationUnits:edit.general.handle.validations.required'))
+      .regex(/^[a-z0-9-]+$/, t('organizationUnits:edit.general.handle.validations.format')),
     description: z.string().optional(),
     parentId: z.string().nullable(),
   });
@@ -67,11 +66,17 @@ type FormData = z.infer<ReturnType<typeof createFormSchema>>;
 
 export default function CreateOrganizationUnitPage(): JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
   const {t} = useTranslation();
   const theme = useTheme();
   const logger = useLogger('CreateOrganizationUnitPage');
   const createOrganizationUnit = useCreateOrganizationUnit();
-  const {data: organizationUnitsData} = useGetOrganizationUnits();
+  const {resetTreeState} = useOrganizationUnit();
+
+  const navigationState = location.state as {parentId?: string; parentName?: string; parentHandle?: string} | null;
+  const preselectedParentId = navigationState?.parentId ?? null;
+  const parentDisplayName = navigationState?.parentName ?? null;
+  const parentDisplayHandle = navigationState?.parentHandle ?? null;
 
   const [error, setError] = useState<string | null>(null);
   const isHandleManuallyEditedRef = useRef<boolean>(false);
@@ -90,24 +95,22 @@ export default function CreateOrganizationUnitPage(): JSX.Element {
       name: '',
       handle: '',
       description: '',
-      parentId: null,
+      parentId: preselectedParentId,
     },
   });
 
-  const nameSuggestions: string[] = useMemo((): string[] => generateOUNameSuggestions(), []);
-  const availableParentOUs: OrganizationUnit[] = useMemo(
-    () => organizationUnitsData?.organizationUnits ?? [],
-    [organizationUnitsData],
-  );
+  const nameSuggestions: string[] = useMemo((): string[] => generateOrganizationUnitNameSuggestions(), []);
 
   /**
    * Generates a handle from the name by lowercasing and replacing spaces with hyphens.
    */
   const generateHandleFromName = (nameValue: string): string => nameValue.toLowerCase().replace(/\s+/g, '-');
 
+  const listUrl = '/organization-units';
+
   const handleClose = (): void => {
     (async (): Promise<void> => {
-      await navigate('/organization-units');
+      await navigate(listUrl);
     })().catch((_error: unknown) => {
       logger.error('Failed to navigate back to organization units list', {error: _error});
     });
@@ -146,8 +149,9 @@ export default function CreateOrganizationUnitPage(): JSX.Element {
 
     createOrganizationUnit.mutate(requestData, {
       onSuccess: () => {
+        resetTreeState();
         (async (): Promise<void> => {
-          await navigate('/organization-units');
+          await navigate(listUrl);
         })().catch((_error: unknown) => {
           logger.error('Failed to navigate after creating organization unit', {error: _error});
         });
@@ -231,7 +235,7 @@ export default function CreateOrganizationUnitPage(): JSX.Element {
 
                     {/* Name field first */}
                     <FormControl fullWidth required>
-                      <FormLabel htmlFor="ou-name-input">{t('organizationUnits:form.name')}</FormLabel>
+                      <FormLabel htmlFor="ou-name-input">{t('organizationUnits:edit.general.name.label')}</FormLabel>
                       <Controller
                         name="name"
                         control={control}
@@ -241,7 +245,7 @@ export default function CreateOrganizationUnitPage(): JSX.Element {
                             fullWidth
                             id="ou-name-input"
                             onChange={(e) => handleNameChange(e.target.value)}
-                            placeholder={t('organizationUnits:form.namePlaceholder')}
+                            placeholder={t('organizationUnits:edit.general.name.placeholder')}
                             error={!!errors.name}
                             helperText={errors.name?.message}
                           />
@@ -281,7 +285,9 @@ export default function CreateOrganizationUnitPage(): JSX.Element {
 
                     {/* Handle field */}
                     <FormControl fullWidth required>
-                      <FormLabel htmlFor="ou-handle-input">{t('organizationUnits:form.handle')}</FormLabel>
+                      <FormLabel htmlFor="ou-handle-input">
+                        {t('organizationUnits:edit.general.handle.label')}
+                      </FormLabel>
                       <Controller
                         name="handle"
                         control={control}
@@ -291,9 +297,9 @@ export default function CreateOrganizationUnitPage(): JSX.Element {
                             fullWidth
                             id="ou-handle-input"
                             onChange={(e) => handleHandleChange(e.target.value)}
-                            placeholder={t('organizationUnits:form.handlePlaceholder')}
+                            placeholder={t('organizationUnits:edit.general.handle.placeholder')}
                             error={!!errors.handle}
-                            helperText={errors.handle?.message ?? t('organizationUnits:form.handleHelperText')}
+                            helperText={errors.handle?.message ?? t('organizationUnits:edit.general.handle.hint')}
                           />
                         )}
                       />
@@ -301,7 +307,9 @@ export default function CreateOrganizationUnitPage(): JSX.Element {
 
                     {/* Description field */}
                     <FormControl fullWidth>
-                      <FormLabel htmlFor="ou-description-input">{t('organizationUnits:form.description')}</FormLabel>
+                      <FormLabel htmlFor="ou-description-input">
+                        {t('organizationUnits:edit.general.description.label')}
+                      </FormLabel>
                       <Controller
                         name="description"
                         control={control}
@@ -310,7 +318,7 @@ export default function CreateOrganizationUnitPage(): JSX.Element {
                             {...field}
                             fullWidth
                             id="ou-description-input"
-                            placeholder={t('organizationUnits:form.descriptionPlaceholder')}
+                            placeholder={t('organizationUnits:edit.general.description.placeholder')}
                             multiline
                             rows={3}
                           />
@@ -318,31 +326,21 @@ export default function CreateOrganizationUnitPage(): JSX.Element {
                       />
                     </FormControl>
 
-                    {/* Parent OU field */}
+                    {/* Parent OU field - read-only */}
                     <FormControl fullWidth>
-                      <FormLabel htmlFor="ou-parent-input">{t('organizationUnits:form.parent')}</FormLabel>
-                      <Controller
-                        name="parentId"
-                        control={control}
-                        render={({field}) => (
-                          <Autocomplete
-                            id="ou-parent-input"
-                            options={availableParentOUs}
-                            getOptionLabel={(option: OrganizationUnit) => option.name}
-                            value={availableParentOUs.find((ou) => ou.id === field.value) ?? null}
-                            onChange={(_event, newValue: OrganizationUnit | null) =>
-                              field.onChange(newValue?.id ?? null)
-                            }
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                placeholder={t('organizationUnits:form.parentPlaceholder')}
-                                helperText={t('organizationUnits:form.parentHelperText')}
-                              />
-                            )}
-                            isOptionEqualToValue={(option, value) => option.id === value.id}
-                          />
-                        )}
+                      <FormLabel htmlFor="ou-parent-input">
+                        {t('organizationUnits:edit.general.parent.label')}
+                      </FormLabel>
+                      <TextField
+                        id="ou-parent-input"
+                        fullWidth
+                        value={
+                          parentDisplayName
+                            ? `${parentDisplayName}${parentDisplayHandle ? ` (${parentDisplayHandle})` : ''}`
+                            : t('organizationUnits:edit.general.ou.noParent.label')
+                        }
+                        slotProps={{input: {readOnly: true}}}
+                        helperText={t('organizationUnits:edit.general.parent.hint')}
                       />
                     </FormControl>
 

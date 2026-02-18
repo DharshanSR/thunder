@@ -36,6 +36,7 @@ type OrganizationUnitServiceTestSuite struct {
 }
 
 const testParentID = "parent"
+const testOUID = "ou-1"
 
 func TestOUService_OrganizationUnitServiceTestSuite_Run(t *testing.T) {
 	suite.Run(t, new(OrganizationUnitServiceTestSuite))
@@ -333,7 +334,7 @@ func (suite *OrganizationUnitServiceTestSuite) TestOUService_GetOrganizationUnit
 }
 
 func (suite *OrganizationUnitServiceTestSuite) TestOUService_CreateOrganizationUnit() {
-	parentID := "parent-1"
+	parentID := testParentOUID
 	validRequest := OrganizationUnitRequest{
 		Handle:      "finance",
 		Name:        "Finance",
@@ -458,6 +459,31 @@ func (suite *OrganizationUnitServiceTestSuite) TestOUService_CreateOrganizationU
 					Once()
 				store.On("CreateOrganizationUnit", mock.MatchedBy(func(ou OrganizationUnit) bool {
 					return ou.Name == "Finance" && ou.Handle == "finance"
+				})).
+					Return(nil).
+					Once()
+			},
+		},
+		{
+			name: "success with design fields",
+			request: OrganizationUnitRequest{
+				Handle:   "finance",
+				Name:     "Finance",
+				ThemeID:  "theme-123",
+				LayoutID: "layout-456",
+				LogoURL:  "https://example.com/logo.png",
+			},
+			setup: func(store *organizationUnitStoreInterfaceMock) {
+				store.On("CheckOrganizationUnitNameConflict", "Finance", (*string)(nil)).
+					Return(false, nil).
+					Once()
+				store.On("CheckOrganizationUnitHandleConflict", "finance", (*string)(nil)).
+					Return(false, nil).
+					Once()
+				store.On("CreateOrganizationUnit", mock.MatchedBy(func(ou OrganizationUnit) bool {
+					return ou.Name == "Finance" && ou.Handle == "finance" &&
+						ou.ThemeID == "theme-123" && ou.LayoutID == "layout-456" &&
+						ou.LogoURL == "https://example.com/logo.png"
 				})).
 					Return(nil).
 					Once()
@@ -801,6 +827,48 @@ func (suite *OrganizationUnitServiceTestSuite) TestOUService_UpdateOrganizationU
 			},
 		},
 		{
+			name: "success with design fields",
+			id:   "ou-1",
+			request: OrganizationUnitRequest{
+				Handle:   "root",
+				Name:     "Root",
+				ThemeID:  "theme-new",
+				LayoutID: "layout-new",
+				LogoURL:  "https://example.com/new-logo.png",
+			},
+			setup: func(store *organizationUnitStoreInterfaceMock) {
+				existing := OrganizationUnit{
+					ID:       "ou-1",
+					Handle:   "root",
+					Name:     "Root",
+					ThemeID:  "theme-old",
+					LayoutID: "layout-old",
+					LogoURL:  "https://example.com/old-logo.png",
+				}
+				store.On("GetOrganizationUnit", "ou-1").
+					Return(existing, nil).
+					Once()
+				store.On("IsOrganizationUnitDeclarative", "ou-1").
+					Return(false).
+					Once()
+				store.On("UpdateOrganizationUnit", OrganizationUnit{
+					ID:       "ou-1",
+					Handle:   "root",
+					Name:     "Root",
+					ThemeID:  "theme-new",
+					LayoutID: "layout-new",
+					LogoURL:  "https://example.com/new-logo.png",
+				}).
+					Return(nil).
+					Once()
+			},
+			assert: func(ou OrganizationUnit) {
+				suite.Equal("theme-new", ou.ThemeID)
+				suite.Equal("layout-new", ou.LayoutID)
+				suite.Equal("https://example.com/new-logo.png", ou.LogoURL)
+			},
+		},
+		{
 			name: "not found on fetch",
 			id:   "missing",
 			request: OrganizationUnitRequest{
@@ -1111,7 +1179,7 @@ func (suite *OrganizationUnitServiceTestSuite) TestOUService_UpdateOrganizationU
 			Once()
 		store.On("IsOrganizationUnitDeclarative", "ou-1").
 			Return(false).
-			Once()
+			Twice() // Called in UpdateOrganizationUnitByPath and updateOUInternal
 		store.On("UpdateOrganizationUnit", mock.AnythingOfType("ou.OrganizationUnit")).
 			Return(nil).
 			Once()
@@ -1121,6 +1189,23 @@ func (suite *OrganizationUnitServiceTestSuite) TestOUService_UpdateOrganizationU
 
 		suite.Require().Nil(err)
 		suite.Require().Equal("ou-1", result.ID)
+	})
+
+	suite.Run("declarative resource cannot be updated", func() {
+		store := newOrganizationUnitStoreInterfaceMock(suite.T())
+		existing := OrganizationUnit{ID: "ou-1", Handle: "root", Name: "Root"}
+		store.On("GetOrganizationUnitByPath", []string{"root"}).
+			Return(existing, nil).
+			Once()
+		store.On("IsOrganizationUnitDeclarative", "ou-1").
+			Return(true).
+			Once()
+
+		service := suite.newService(store)
+		_, err := service.UpdateOrganizationUnitByPath("root", request)
+
+		suite.Require().Equal(ErrorCannotModifyDeclarativeResource, *err)
+		store.AssertNotCalled(suite.T(), "UpdateOrganizationUnit", mock.Anything)
 	})
 }
 
@@ -1293,7 +1378,7 @@ func (suite *OrganizationUnitServiceTestSuite) TestOUService_DeleteOrganizationU
 			Once()
 		store.On("IsOrganizationUnitDeclarative", "ou-1").
 			Return(false).
-			Once()
+			Twice() // Called in DeleteOrganizationUnitByPath and deleteOUInternal
 		store.On("CheckOrganizationUnitHasChildResources", "ou-1").
 			Return(true, nil).
 			Once()
@@ -1311,7 +1396,7 @@ func (suite *OrganizationUnitServiceTestSuite) TestOUService_DeleteOrganizationU
 			Once()
 		store.On("IsOrganizationUnitDeclarative", "ou-1").
 			Return(false).
-			Once()
+			Twice() // Called in DeleteOrganizationUnitByPath and deleteOUInternal
 		store.On("CheckOrganizationUnitHasChildResources", "ou-1").
 			Return(false, nil).
 			Once()
@@ -1323,6 +1408,23 @@ func (suite *OrganizationUnitServiceTestSuite) TestOUService_DeleteOrganizationU
 		err := service.DeleteOrganizationUnitByPath("root")
 
 		suite.Require().Nil(err)
+	})
+
+	suite.Run("declarative resource cannot be deleted", func() {
+		store := newOrganizationUnitStoreInterfaceMock(suite.T())
+		store.On("GetOrganizationUnitByPath", []string{"root"}).
+			Return(OrganizationUnit{ID: "ou-1"}, nil).
+			Once()
+		store.On("IsOrganizationUnitDeclarative", "ou-1").
+			Return(true).
+			Once()
+
+		service := suite.newService(store)
+		err := service.DeleteOrganizationUnitByPath("root")
+
+		suite.Require().Equal(ErrorCannotModifyDeclarativeResource, *err)
+		store.AssertNotCalled(suite.T(), "CheckOrganizationUnitHasChildResources", mock.Anything)
+		store.AssertNotCalled(suite.T(), "DeleteOrganizationUnit", mock.Anything)
 	})
 }
 
@@ -1783,4 +1885,166 @@ func (suite *OrganizationUnitServiceTestSuite) TestOUService_CheckCircularDepend
 
 	err = service3.checkCircularDependency("ou-1", &parentID)
 	suite.Require().Equal(&ErrorInternalServerError, err)
+}
+
+func (suite *OrganizationUnitServiceTestSuite) TestOUService_UpdateOrganizationUnit_SameParent() {
+	parentID := testParentOUID
+
+	suite.Run("skips conflict checks when name handle and parent unchanged", func() {
+		store := newOrganizationUnitStoreInterfaceMock(suite.T())
+		existing := OrganizationUnit{
+			ID:          testOUID,
+			Handle:      "finance",
+			Name:        "Finance",
+			Description: "old",
+			Parent:      &parentID,
+		}
+		store.On("GetOrganizationUnit", testOUID).
+			Return(existing, nil).
+			Once()
+		store.On("IsOrganizationUnitDeclarative", testOUID).
+			Return(false).
+			Once()
+		store.On("IsOrganizationUnitExists", parentID).
+			Return(true, nil).
+			Once()
+		// checkCircularDependency walks up from parent
+		store.On("GetOrganizationUnit", parentID).
+			Return(OrganizationUnit{ID: parentID, Parent: nil}, nil).
+			Once()
+		store.On("UpdateOrganizationUnit", mock.MatchedBy(func(ou OrganizationUnit) bool {
+			return ou.ID == testOUID && ou.Description == "updated" && *ou.Parent == parentID
+		})).
+			Return(nil).
+			Once()
+
+		service := suite.newService(store)
+		result, err := service.UpdateOrganizationUnit(testOUID, OrganizationUnitRequest{
+			Handle:      "finance",
+			Name:        "Finance",
+			Description: "updated",
+			Parent:      strPtr(parentID),
+		})
+
+		suite.Require().Nil(err)
+		suite.Require().Equal("updated", result.Description)
+		store.AssertNotCalled(suite.T(), "CheckOrganizationUnitNameConflict", mock.Anything, mock.Anything)
+		store.AssertNotCalled(suite.T(), "CheckOrganizationUnitHandleConflict", mock.Anything, mock.Anything)
+		store.AssertExpectations(suite.T())
+	})
+
+	suite.Run("runs conflict checks when parent changes from nil to value", func() {
+		store := newOrganizationUnitStoreInterfaceMock(suite.T())
+		existing := OrganizationUnit{
+			ID:     testOUID,
+			Handle: "finance",
+			Name:   "Finance",
+			Parent: nil,
+		}
+		store.On("GetOrganizationUnit", testOUID).
+			Return(existing, nil).
+			Once()
+		store.On("IsOrganizationUnitDeclarative", testOUID).
+			Return(false).
+			Once()
+		store.On("IsOrganizationUnitExists", parentID).
+			Return(true, nil).
+			Once()
+		// checkCircularDependency walks up from parent
+		store.On("GetOrganizationUnit", parentID).
+			Return(OrganizationUnit{ID: parentID, Parent: nil}, nil).
+			Once()
+		store.On("CheckOrganizationUnitNameConflict", "Finance", mock.MatchedBy(func(p *string) bool {
+			return p != nil && *p == parentID
+		})).
+			Return(false, nil).
+			Once()
+		store.On("CheckOrganizationUnitHandleConflict", "finance", mock.MatchedBy(func(p *string) bool {
+			return p != nil && *p == parentID
+		})).
+			Return(false, nil).
+			Once()
+		store.On("UpdateOrganizationUnit", mock.MatchedBy(func(ou OrganizationUnit) bool {
+			return ou.ID == testOUID && *ou.Parent == parentID
+		})).
+			Return(nil).
+			Once()
+
+		service := suite.newService(store)
+		result, err := service.UpdateOrganizationUnit(testOUID, OrganizationUnitRequest{
+			Handle: "finance",
+			Name:   "Finance",
+			Parent: strPtr(parentID),
+		})
+
+		suite.Require().Nil(err)
+		suite.Require().Equal(testOUID, result.ID)
+		store.AssertExpectations(suite.T())
+	})
+
+	suite.Run("runs conflict checks when parent changes from value to nil", func() {
+		store := newOrganizationUnitStoreInterfaceMock(suite.T())
+		existing := OrganizationUnit{
+			ID:     testOUID,
+			Handle: "finance",
+			Name:   "Finance",
+			Parent: &parentID,
+		}
+		store.On("GetOrganizationUnit", testOUID).
+			Return(existing, nil).
+			Once()
+		store.On("IsOrganizationUnitDeclarative", testOUID).
+			Return(false).
+			Once()
+		store.On("CheckOrganizationUnitNameConflict", "Finance", (*string)(nil)).
+			Return(false, nil).
+			Once()
+		store.On("CheckOrganizationUnitHandleConflict", "finance", (*string)(nil)).
+			Return(false, nil).
+			Once()
+		store.On("UpdateOrganizationUnit", mock.MatchedBy(func(ou OrganizationUnit) bool {
+			return ou.ID == testOUID && ou.Parent == nil
+		})).
+			Return(nil).
+			Once()
+
+		service := suite.newService(store)
+		result, err := service.UpdateOrganizationUnit(testOUID, OrganizationUnitRequest{
+			Handle: "finance",
+			Name:   "Finance",
+			Parent: nil,
+		})
+
+		suite.Require().Nil(err)
+		suite.Require().Equal(testOUID, result.ID)
+		store.AssertExpectations(suite.T())
+	})
+}
+
+func (suite *OrganizationUnitServiceTestSuite) TestOUService_StringPtrEqual() {
+	suite.Run("both nil", func() {
+		suite.Require().True(stringPtrEqual(nil, nil))
+	})
+
+	suite.Run("first nil", func() {
+		b := "value"
+		suite.Require().False(stringPtrEqual(nil, &b))
+	})
+
+	suite.Run("second nil", func() {
+		a := "value"
+		suite.Require().False(stringPtrEqual(&a, nil))
+	})
+
+	suite.Run("equal values", func() {
+		a := "same"
+		b := "same"
+		suite.Require().True(stringPtrEqual(&a, &b))
+	})
+
+	suite.Run("different values", func() {
+		a := "one"
+		b := "two"
+		suite.Require().False(stringPtrEqual(&a, &b))
+	})
 }

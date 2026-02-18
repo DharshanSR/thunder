@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com).
+ * Copyright (c) 2025-2026, WSO2 LLC. (https://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -16,9 +16,11 @@
  * under the License.
  */
 
-import {useState, useCallback, useMemo, type JSX} from 'react';
+import {useState, useCallback, useMemo} from 'react';
+import type {ReactNode, SyntheticEvent, JSX} from 'react';
 import {useNavigate, useParams, useLocation} from 'react-router';
 import {
+  Avatar,
   Box,
   Stack,
   Typography,
@@ -30,22 +32,26 @@ import {
   CircularProgress,
   Tabs,
   Tab,
+  Snackbar,
 } from '@wso2/oxygen-ui';
 import {ArrowLeft, Edit, Building} from '@wso2/oxygen-ui-icons-react';
 import {useTranslation} from 'react-i18next';
 import {useLogger} from '@thunder/logger/react';
 import useGetOrganizationUnit from '../api/useGetOrganizationUnit';
 import useUpdateOrganizationUnit from '../api/useUpdateOrganizationUnit';
-import type {OrganizationUnit, OUNavigationState} from '../types/organization-units';
+import type {OrganizationUnit} from '../models/organization-unit';
+import type {OUNavigationState} from '../models/navigation';
 import OrganizationUnitDeleteDialog from '../components/OrganizationUnitDeleteDialog';
+import useOrganizationUnit from '../contexts/useOrganizationUnit';
 import EditGeneralSettings from '../components/edit-organization-unit/general-settings/EditGeneralSettings';
-import EditChildOUs from '../components/edit-organization-unit/child-ous/EditChildOUs';
-import EditUsers from '../components/edit-organization-unit/users/EditUsers';
-import EditGroups from '../components/edit-organization-unit/groups/EditGroups';
-import EditAdvancedSettings from '../components/edit-organization-unit/advanced-settings/EditAdvancedSettings';
+import EditChildOrganizationUnitSettings from '../components/edit-organization-unit/child-organization-unit-settings/EditChildOrganizationUnitSettings';
+import EditUsers from '../components/edit-organization-unit/user-settings/EditUserSettings';
+import EditGroups from '../components/edit-organization-unit/group-settings/EditGroupSettings';
+import EditCustomization from '../components/edit-organization-unit/customization-settings/EditCustomizationSettings';
+import LogoUpdateModal from '../../../components/LogoUpdateModal';
 
 interface TabPanelProps {
-  children?: React.ReactNode;
+  children?: ReactNode;
   index: number;
   value: number;
 }
@@ -77,28 +83,33 @@ export default function OrganizationUnitEditPage(): JSX.Element {
 
   const {data: organizationUnit, isLoading, error: fetchError, refetch} = useGetOrganizationUnit(id);
   const updateOrganizationUnit = useUpdateOrganizationUnit();
+  const {resetTreeState} = useOrganizationUnit();
 
   const [activeTab, setActiveTab] = useState(0);
+  const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
   const [editedOU, setEditedOU] = useState<Partial<OrganizationUnit>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+  const [snackbar, setSnackbar] = useState<{open: boolean; message: string}>({open: false, message: ''});
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [tempName, setTempName] = useState('');
   const [tempDescription, setTempDescription] = useState('');
 
+  const listUrl = '/organization-units';
+
   const handleBack = async (): Promise<void> => {
     if (fromOU) {
       await navigate(`/organization-units/${fromOU.id}`);
     } else {
-      await navigate('/organization-units');
+      await navigate(listUrl);
     }
   };
 
   const backButtonText = fromOU
-    ? t('organizationUnits:view.backToOU', {name: fromOU.name})
-    : t('organizationUnits:view.back');
+    ? t('organizationUnits:edit.page.backToOU', {name: fromOU.name})
+    : t('organizationUnits:edit.page.back');
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number): void => {
+  const handleTabChange = (_event: SyntheticEvent, newValue: number): void => {
     setActiveTab(newValue);
   };
 
@@ -112,7 +123,10 @@ export default function OrganizationUnitEditPage(): JSX.Element {
     const updatedData = {
       handle: editedOU.handle ?? organizationUnit.handle,
       name: editedOU.name ?? organizationUnit.name,
-      description: editedOU.description ?? organizationUnit.description,
+      description: editedOU.description !== undefined ? editedOU.description : organizationUnit.description,
+      parent: organizationUnit.parent ?? null,
+      theme_id: editedOU.theme_id !== undefined ? editedOU.theme_id : organizationUnit.theme_id,
+      logo_url: editedOU.logo_url ?? organizationUnit.logo_url,
     };
 
     try {
@@ -120,21 +134,27 @@ export default function OrganizationUnitEditPage(): JSX.Element {
         id,
         data: updatedData,
       });
+      resetTreeState();
       setEditedOU({});
       await refetch();
     } catch {
       logger.error('Failed to update organization unit');
     }
-  }, [organizationUnit, id, editedOU, updateOrganizationUnit, refetch, logger]);
+  }, [organizationUnit, id, editedOU, updateOrganizationUnit, resetTreeState, refetch, logger]);
 
   const hasChanges = useMemo(() => Object.keys(editedOU).length > 0, [editedOU]);
 
   const handleDeleteSuccess = (): void => {
+    resetTreeState();
     (async (): Promise<void> => {
-      await navigate('/organization-units');
+      await navigate(listUrl);
     })().catch((_error: unknown) => {
       logger.error('Failed to navigate after deleting organization unit', {error: _error});
     });
+  };
+
+  const handleDeleteError = (message: string): void => {
+    setSnackbar({open: true, message});
   };
 
   if (isLoading) {
@@ -149,7 +169,7 @@ export default function OrganizationUnitEditPage(): JSX.Element {
     return (
       <Box sx={{maxWidth: 1200, mx: 'auto', px: 2, pt: 6}}>
         <Alert severity="error" sx={{mb: 2}}>
-          {fetchError.message ?? t('organizationUnits:view.error')}
+          {fetchError.message ?? t('organizationUnits:edit.page.error')}
         </Alert>
         <Button
           onClick={() => {
@@ -159,7 +179,7 @@ export default function OrganizationUnitEditPage(): JSX.Element {
           }}
           startIcon={<ArrowLeft size={16} />}
         >
-          {t('organizationUnits:view.back')}
+          {t('organizationUnits:edit.page.back')}
         </Button>
       </Box>
     );
@@ -169,7 +189,7 @@ export default function OrganizationUnitEditPage(): JSX.Element {
     return (
       <Box sx={{maxWidth: 1200, mx: 'auto', px: 2, pt: 6}}>
         <Alert severity="warning" sx={{mb: 2}}>
-          {t('organizationUnits:view.notFound')}
+          {t('organizationUnits:edit.page.notFound')}
         </Alert>
         <Button
           onClick={() => {
@@ -179,7 +199,7 @@ export default function OrganizationUnitEditPage(): JSX.Element {
           }}
           startIcon={<ArrowLeft size={16} />}
         >
-          {t('organizationUnits:view.back')}
+          {t('organizationUnits:edit.page.back')}
         </Button>
       </Box>
     );
@@ -205,18 +225,42 @@ export default function OrganizationUnitEditPage(): JSX.Element {
       {/* Organization Unit Header */}
       <Box sx={{p: 3, mb: 3}}>
         <Stack direction="row" spacing={3} alignItems="center">
-          <Box
-            sx={{
-              width: 80,
-              height: 80,
-              borderRadius: 2,
-              bgcolor: 'action.hover',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Building size={32} />
+          <Box sx={{position: 'relative'}}>
+            <Avatar
+              src={editedOU.logo_url ?? organizationUnit.logo_url ?? undefined}
+              slotProps={{
+                img: {
+                  onError: (e: React.SyntheticEvent<HTMLImageElement>) => {
+                    e.currentTarget.style.display = 'none';
+                  },
+                },
+              }}
+              sx={{
+                width: 80,
+                height: 80,
+                cursor: 'pointer',
+                '&:hover': {
+                  opacity: 0.8,
+                },
+              }}
+              onClick={() => setIsLogoModalOpen(true)}
+            >
+              <Building size={32} />
+            </Avatar>
+            <IconButton
+              size="small"
+              sx={{
+                position: 'absolute',
+                bottom: -4,
+                right: -4,
+                bgcolor: 'background.paper',
+                boxShadow: 1,
+                '&:hover': {bgcolor: 'action.hover'},
+              }}
+              onClick={() => setIsLogoModalOpen(true)}
+            >
+              <Edit size={14} />
+            </IconButton>
           </Box>
           <Box flex={1}>
             <Stack direction="row" alignItems="center" spacing={1} mb={1}>
@@ -287,12 +331,15 @@ export default function OrganizationUnitEditPage(): JSX.Element {
                       }
                       setIsEditingDescription(false);
                     } else if (e.key === 'Escape') {
-                      setTempDescription(editedOU.description ?? organizationUnit.description ?? '');
+                      setTempDescription(
+                        (editedOU.description !== undefined ? editedOU.description : organizationUnit.description) ??
+                          '',
+                      );
                       setIsEditingDescription(false);
                     }
                   }}
                   size="small"
-                  placeholder={t('organizationUnits:view.description.placeholder')}
+                  placeholder={t('organizationUnits:edit.page.description.placeholder')}
                   sx={{
                     maxWidth: '600px',
                     '& .MuiInputBase-root': {
@@ -303,12 +350,16 @@ export default function OrganizationUnitEditPage(): JSX.Element {
               ) : (
                 <>
                   <Typography variant="body2" color="text.secondary">
-                    {editedOU.description ?? organizationUnit.description ?? t('organizationUnits:view.description.empty')}
+                    {(editedOU.description !== undefined ? editedOU.description : organizationUnit.description) ??
+                      t('organizationUnits:edit.page.description.empty')}
                   </Typography>
                   <IconButton
                     size="small"
                     onClick={() => {
-                      setTempDescription(editedOU.description ?? organizationUnit.description ?? '');
+                      setTempDescription(
+                        (editedOU.description !== undefined ? editedOU.description : organizationUnit.description) ??
+                          '',
+                      );
                       setIsEditingDescription(true);
                     }}
                     sx={{
@@ -329,31 +380,31 @@ export default function OrganizationUnitEditPage(): JSX.Element {
       {/* Tabs */}
       <Tabs value={activeTab} onChange={handleTabChange} aria-label="organization unit settings tabs">
         <Tab
-          label={t('organizationUnits:view.tabs.general')}
+          label={t('organizationUnits:edit.page.tabs.general')}
           id="ou-tab-0"
           aria-controls="ou-tabpanel-0"
           sx={{textTransform: 'none'}}
         />
         <Tab
-          label={t('organizationUnits:view.tabs.childOUs')}
+          label={t('organizationUnits:edit.page.tabs.childOUs')}
           id="ou-tab-1"
           aria-controls="ou-tabpanel-1"
           sx={{textTransform: 'none'}}
         />
         <Tab
-          label={t('organizationUnits:view.tabs.users')}
+          label={t('organizationUnits:edit.page.tabs.users')}
           id="ou-tab-2"
           aria-controls="ou-tabpanel-2"
           sx={{textTransform: 'none'}}
         />
         <Tab
-          label={t('organizationUnits:view.tabs.groups')}
+          label={t('organizationUnits:edit.page.tabs.groups')}
           id="ou-tab-3"
           aria-controls="ou-tabpanel-3"
           sx={{textTransform: 'none'}}
         />
         <Tab
-          label={t('organizationUnits:view.tabs.advanced')}
+          label={t('organizationUnits:edit.page.tabs.customization')}
           id="ou-tab-4"
           aria-controls="ou-tabpanel-4"
           sx={{textTransform: 'none'}}
@@ -364,12 +415,12 @@ export default function OrganizationUnitEditPage(): JSX.Element {
       <>
         {/* General Settings Tab */}
         <TabPanel value={activeTab} index={0}>
-          <EditGeneralSettings organizationUnit={organizationUnit} />
+          <EditGeneralSettings organizationUnit={organizationUnit} onDeleteClick={() => setDeleteDialogOpen(true)} />
         </TabPanel>
 
         {/* Child OUs Tab */}
         <TabPanel value={activeTab} index={1}>
-          <EditChildOUs organizationUnitId={id!} organizationUnitName={organizationUnit.name} />
+          <EditChildOrganizationUnitSettings organizationUnitId={id!} organizationUnitName={organizationUnit.name} />
         </TabPanel>
 
         {/* Users Tab */}
@@ -382,11 +433,26 @@ export default function OrganizationUnitEditPage(): JSX.Element {
           <EditGroups organizationUnitId={id!} />
         </TabPanel>
 
-        {/* Advanced Settings Tab */}
+        {/* Customization Tab */}
         <TabPanel value={activeTab} index={4}>
-          <EditAdvancedSettings onDeleteClick={() => setDeleteDialogOpen(true)} />
+          <EditCustomization
+            organizationUnit={organizationUnit}
+            editedOU={editedOU}
+            onFieldChange={handleFieldChange}
+          />
         </TabPanel>
       </>
+
+      {/* Logo Update Modal */}
+      <LogoUpdateModal
+        open={isLogoModalOpen}
+        onClose={() => setIsLogoModalOpen(false)}
+        currentLogoUrl={editedOU.logo_url ?? organizationUnit.logo_url ?? undefined}
+        onLogoUpdate={(newLogoUrl: string) => {
+          handleFieldChange('logo_url', newLogoUrl);
+          setIsLogoModalOpen(false);
+        }}
+      />
 
       {/* Delete Dialog */}
       <OrganizationUnitDeleteDialog
@@ -394,7 +460,19 @@ export default function OrganizationUnitEditPage(): JSX.Element {
         organizationUnitId={id ?? null}
         onClose={() => setDeleteDialogOpen(false)}
         onSuccess={handleDeleteSuccess}
+        onError={handleDeleteError}
       />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar((prev) => ({...prev, open: false}))}
+        anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
+      >
+        <Alert onClose={() => setSnackbar((prev) => ({...prev, open: false}))} severity="error" sx={{width: '100%'}}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
       {/* Floating Action Bar */}
       {hasChanges && (
@@ -434,10 +512,10 @@ export default function OrganizationUnitEditPage(): JSX.Element {
               >
                 !
               </Box>
-              {t('organizationUnits:view.unsavedChanges')}
+              {t('organizationUnits:edit.actions.unsavedChanges.label')}
             </Typography>
             <Button variant="outlined" color="error" onClick={() => setEditedOU({})}>
-              {t('organizationUnits:view.reset')}
+              {t('organizationUnits:edit.actions.reset.label')}
             </Button>
             <Button
               variant="contained"
@@ -447,7 +525,9 @@ export default function OrganizationUnitEditPage(): JSX.Element {
               }}
               disabled={updateOrganizationUnit.isPending}
             >
-              {updateOrganizationUnit.isPending ? t('organizationUnits:view.saving') : t('organizationUnits:view.save')}
+              {updateOrganizationUnit.isPending
+                ? t('organizationUnits:edit.actions.saving.label')
+                : t('organizationUnits:edit.actions.save.label')}
             </Button>
           </Stack>
         </Paper>

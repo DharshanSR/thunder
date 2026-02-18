@@ -19,7 +19,8 @@
 import {useMutation, useQueryClient, type UseMutationResult} from '@tanstack/react-query';
 import {useConfig} from '@thunder/shared-contexts';
 import {useAsgardeo} from '@asgardeo/react';
-import type {CreateOrganizationUnitRequest, OrganizationUnit} from '../types/organization-units';
+import type {OrganizationUnit} from '../models/organization-unit';
+import type {CreateOrganizationUnitRequest} from '../models/requests';
 import OrganizationUnitQueryKeys from '../constants/organization-unit-query-keys';
 
 /**
@@ -79,6 +80,10 @@ export default function useCreateOrganizationUnit(): UseMutationResult<
     onSuccess: () => {
       // Invalidate and refetch organization units list after successful creation
       queryClient.invalidateQueries({queryKey: [OrganizationUnitQueryKeys.ORGANIZATION_UNITS]}).catch(() => {
+        // Ignore invalidation errors
+      });
+      // Invalidate child OUs cache so tree view picks up the new child
+      queryClient.invalidateQueries({queryKey: [OrganizationUnitQueryKeys.CHILD_ORGANIZATION_UNITS]}).catch(() => {
         // Ignore invalidation errors
       });
     },
