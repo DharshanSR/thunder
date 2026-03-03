@@ -1,2 +1,14 @@
 User-agent: *
-Disallow: /
+# Block all non-English locales from being indexed until translations are complete
+Disallow: /es-ES/
+Disallow: /fr-FR/
+Disallow: /zh-CN/
+Disallow: /ja-JP/
+Disallow: /pt-BR/
+Disallow: /de-DE/
+
+# Allow English (default locale)
+Allow: /
+
+# Sitemap location
+Sitemap: https://thunder.dev/sitemap.xml

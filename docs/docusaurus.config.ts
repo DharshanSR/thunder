@@ -54,8 +54,45 @@ const config: Config = {
 
   // Useful metadata like html lang for internationalization.
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+    defaultLocale: 'en-US',
+    locales: ['en-US', 'es-ES', 'fr-FR', 'zh-CN', 'ja-JP', 'pt-BR', 'de-DE'],
+    localeConfigs: {
+      'en-US': {
+        label: 'English',
+        direction: 'ltr',
+        htmlLang: 'en-US',
+      },
+      'es-ES': {
+        label: 'Español',
+        direction: 'ltr',
+        htmlLang: 'es-ES',
+      },
+      'fr-FR': {
+        label: 'Français',
+        direction: 'ltr',
+        htmlLang: 'fr-FR',
+      },
+      'zh-CN': {
+        label: '简体中文',
+        direction: 'ltr',
+        htmlLang: 'zh-CN',
+      },
+      'ja-JP': {
+        label: '日本語',
+        direction: 'ltr',
+        htmlLang: 'ja-JP',
+      },
+      'pt-BR': {
+        label: 'Português (Brasil)',
+        direction: 'ltr',
+        htmlLang: 'pt-BR',
+      },
+      'de-DE': {
+        label: 'Deutsch',
+        direction: 'ltr',
+        htmlLang: 'de-DE',
+      },
+    },
   },
 
   plugins: [webpackPlugin],
