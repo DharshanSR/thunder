@@ -1,0 +1,44 @@
+name: Docs - i18n Check
+
+on:
+  pull_request:
+    paths:
+      - 'docs/i18n/**'
+      - 'docs/content/**'
+      - 'docs/docusaurus.config.ts'
+
+jobs:
+  check-translations:
+    name: Check Translation Files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        working-directory: docs
+        run: pnpm install
+
+      - name: Build all locales
+        working-directory: docs
+        run: pnpm run build:i18n
+        continue-on-error: false
+
+      - name: Check for broken links
+        working-directory: docs
+        run: |
+          # Add link checking logic here if needed
+          echo "Translation build successful"

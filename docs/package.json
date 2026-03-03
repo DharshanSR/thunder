@@ -22,9 +22,11 @@
   ],
   "scripts": {
     "build": "pnpm prebuild && docusaurus build",
+    "build:i18n": "pnpm prebuild && docusaurus build --locale all",
     "clear": "docusaurus clear",
     "deploy": "docusaurus deploy",
     "dev": "pnpm prebuild && docusaurus start",
+    "dev:locale": "pnpm prebuild && docusaurus start --locale",
     "docusaurus": "docusaurus",
     "generate:api-specs": "node ./scripts/merge-openapi-specs.mjs",
     "generate:changelog": "node ./scripts/generate-changelog.mjs",
@@ -35,7 +37,9 @@
     "swizzle": "docusaurus swizzle",
     "typecheck": "tsc",
     "write-translations": "docusaurus write-translations",
-    "write-heading-ids": "docusaurus write-heading-ids"
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "i18n:extract": "docusaurus write-translations",
+    "i18n:build": "pnpm build:i18n"
   },
   "dependencies": {
     "@docusaurus/core": "3.9.2",
