@@ -24,6 +24,7 @@ const sidebar: SidebarsConfig = {
       type: 'doc',
       id: 'sdks/react/overview',
       label: 'Overview',
+      key: 'react-sdk-overview',
     },
     {
       type: 'category',
@@ -175,6 +176,7 @@ const sidebar: SidebarsConfig = {
               type: 'doc',
               id: 'sdks/react/guides/protecting-routes/overview',
               label: 'Overview',
+              key: 'protecting-routes-overview',
             },
             {
               type: 'doc',

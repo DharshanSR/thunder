@@ -1,0 +1,166 @@
+{
+  "version.label": {
+    "message": "Next",
+    "description": "The label for version current"
+  },
+  "sidebar.docsSidebar.category.Quick Start": {
+    "message": "Quick Start",
+    "description": "The label for category 'Quick Start' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Authentication": {
+    "message": "Authentication",
+    "description": "The label for category 'Authentication' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Passwordless Authentication": {
+    "message": "Passwordless Authentication",
+    "description": "The label for category 'Passwordless Authentication' in sidebar 'docsSidebar'"
+  },
+  "sidebar.reactSdkSidebar.category.APIs": {
+    "message": "APIs",
+    "description": "The label for category 'APIs' in sidebar 'reactSdkSidebar'"
+  },
+  "sidebar.reactSdkSidebar.category.Contexts": {
+    "message": "Contexts",
+    "description": "The label for category 'Contexts' in sidebar 'reactSdkSidebar'"
+  },
+  "sidebar.reactSdkSidebar.category.Components": {
+    "message": "Components",
+    "description": "The label for category 'Components' in sidebar 'reactSdkSidebar'"
+  },
+  "sidebar.reactSdkSidebar.category.Action Components": {
+    "message": "Action Components",
+    "description": "The label for category 'Action Components' in sidebar 'reactSdkSidebar'"
+  },
+  "sidebar.reactSdkSidebar.category.Control Components": {
+    "message": "Control Components",
+    "description": "The label for category 'Control Components' in sidebar 'reactSdkSidebar'"
+  },
+  "sidebar.reactSdkSidebar.category.User Self-care Components": {
+    "message": "User Self-care Components",
+    "description": "The label for category 'User Self-care Components' in sidebar 'reactSdkSidebar'"
+  },
+  "sidebar.reactSdkSidebar.category.Organization Components (B2B)": {
+    "message": "Organization Components (B2B)",
+    "description": "The label for category 'Organization Components (B2B)' in sidebar 'reactSdkSidebar'"
+  },
+  "sidebar.reactSdkSidebar.category.Hooks": {
+    "message": "Hooks",
+    "description": "The label for category 'Hooks' in sidebar 'reactSdkSidebar'"
+  },
+  "sidebar.reactSdkSidebar.category.Guides": {
+    "message": "Guides",
+    "description": "The label for category 'Guides' in sidebar 'reactSdkSidebar'"
+  },
+  "sidebar.reactSdkSidebar.category.Protecting Routes": {
+    "message": "Protecting Routes",
+    "description": "The label for category 'Protecting Routes' in sidebar 'reactSdkSidebar'"
+  },
+  "sidebar.reactSdkSidebar.doc.react-sdk-overview": {
+    "message": "Overview",
+    "description": "The label for the doc item 'Overview' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/overview"
+  },
+  "sidebar.reactSdkSidebar.doc.<AsgardeoProvider />": {
+    "message": "<AsgardeoProvider />",
+    "description": "The label for the doc item '<AsgardeoProvider />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/contexts/asgardeo-provider"
+  },
+  "sidebar.reactSdkSidebar.doc.<SignInButton />": {
+    "message": "<SignInButton />",
+    "description": "The label for the doc item '<SignInButton />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/sign-in-button"
+  },
+  "sidebar.reactSdkSidebar.doc.<SignOutButton />": {
+    "message": "<SignOutButton />",
+    "description": "The label for the doc item '<SignOutButton />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/sign-out-button"
+  },
+  "sidebar.reactSdkSidebar.doc.<SignUpButton />": {
+    "message": "<SignUpButton />",
+    "description": "The label for the doc item '<SignUpButton />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/sign-up-button"
+  },
+  "sidebar.reactSdkSidebar.doc.<SignedIn />": {
+    "message": "<SignedIn />",
+    "description": "The label for the doc item '<SignedIn />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/signed-in"
+  },
+  "sidebar.reactSdkSidebar.doc.<SignedOut />": {
+    "message": "<SignedOut />",
+    "description": "The label for the doc item '<SignedOut />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/signed-out"
+  },
+  "sidebar.reactSdkSidebar.doc.<Loading />": {
+    "message": "<Loading />",
+    "description": "The label for the doc item '<Loading />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/loading"
+  },
+  "sidebar.reactSdkSidebar.doc.<UserDropdown />": {
+    "message": "<UserDropdown />",
+    "description": "The label for the doc item '<UserDropdown />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/user-dropdown"
+  },
+  "sidebar.reactSdkSidebar.doc.<UserProfile />": {
+    "message": "<UserProfile />",
+    "description": "The label for the doc item '<UserProfile />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/user-profile"
+  },
+  "sidebar.reactSdkSidebar.doc.<User />": {
+    "message": "<User />",
+    "description": "The label for the doc item '<User />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/user"
+  },
+  "sidebar.reactSdkSidebar.doc.<CreateOrganization />": {
+    "message": "<CreateOrganization />",
+    "description": "The label for the doc item '<CreateOrganization />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/create-organization"
+  },
+  "sidebar.reactSdkSidebar.doc.<OrganizationProfile />": {
+    "message": "<OrganizationProfile />",
+    "description": "The label for the doc item '<OrganizationProfile />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/organization-profile"
+  },
+  "sidebar.reactSdkSidebar.doc.<OrganizationSwitcher />": {
+    "message": "<OrganizationSwitcher />",
+    "description": "The label for the doc item '<OrganizationSwitcher />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/organization-switcher"
+  },
+  "sidebar.reactSdkSidebar.doc.<OrganizationList />": {
+    "message": "<OrganizationList />",
+    "description": "The label for the doc item '<OrganizationList />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/organization-list"
+  },
+  "sidebar.reactSdkSidebar.doc.<Organization />": {
+    "message": "<Organization />",
+    "description": "The label for the doc item '<Organization />' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/components/organization"
+  },
+  "sidebar.reactSdkSidebar.doc.useAsgardeo()": {
+    "message": "useAsgardeo()",
+    "description": "The label for the doc item 'useAsgardeo()' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/apis/hooks/use-asgardeo"
+  },
+  "sidebar.reactSdkSidebar.doc.protecting-routes-overview": {
+    "message": "Overview",
+    "description": "The label for the doc item 'Overview' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/guides/protecting-routes/overview"
+  },
+  "sidebar.reactSdkSidebar.doc.React Router": {
+    "message": "React Router",
+    "description": "The label for the doc item 'React Router' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/guides/protecting-routes/react-router"
+  },
+  "sidebar.reactSdkSidebar.doc.TanStack Router": {
+    "message": "TanStack Router",
+    "description": "The label for the doc item 'TanStack Router' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/guides/protecting-routes/tanstack-router"
+  },
+  "sidebar.reactSdkSidebar.doc.Custom Implementation": {
+    "message": "Custom Implementation",
+    "description": "The label for the doc item 'Custom Implementation' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/guides/protecting-routes/custom"
+  },
+  "sidebar.reactSdkSidebar.doc.Accessing Protected APIs": {
+    "message": "Accessing Protected APIs",
+    "description": "The label for the doc item 'Accessing Protected APIs' in sidebar 'reactSdkSidebar', linking to the doc sdks/react/guides/accessing-protected-apis"
+  },
+  "sidebar.communitySidebar.category.Contributing": {
+    "message": "Contributing",
+    "description": "The label for category 'Contributing' in sidebar 'communitySidebar'"
+  },
+  "sidebar.communitySidebar.category.Contributing Code": {
+    "message": "Contributing Code",
+    "description": "The label for category 'Contributing Code' in sidebar 'communitySidebar'"
+  },
+  "sidebar.communitySidebar.category.Backend Development": {
+    "message": "Backend Development",
+    "description": "The label for category 'Backend Development' in sidebar 'communitySidebar'"
+  },
+  "sidebar.communitySidebar.category.Frontend Development": {
+    "message": "Frontend Development",
+    "description": "The label for category 'Frontend Development' in sidebar 'communitySidebar'"
+  },
+  "sidebar.communitySidebar.category.Documentation Development": {
+    "message": "Documentation Development",
+    "description": "The label for category 'Documentation Development' in sidebar 'communitySidebar'"
+  }
+}
