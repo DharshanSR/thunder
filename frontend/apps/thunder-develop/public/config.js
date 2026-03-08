@@ -19,10 +19,13 @@
 /* eslint-disable no-underscore-dangle */
 
 window.__THUNDER_RUNTIME_CONFIG__ = {
+  brand: {
+    product_name: 'Thunder',
+  },
   client: {
     base: '/develop',
     client_id: 'DEVELOP',
-    scopes: ['openid', 'profile', 'email', 'system'],
+    scopes: ['openid', 'profile', 'email', 'ou', 'system', 'system:user', 'system:group','system:ou:view', 'system:userschema:view'],
   },
   server: {
     hostname: 'localhost',

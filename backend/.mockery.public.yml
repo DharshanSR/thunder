@@ -140,6 +140,14 @@ packages:
       pkgname: introspectmock
       filename: "{{.InterfaceName}}_mock.go"
 
+  github.com/asgardeo/thunder/internal/oauth/oauth2/discovery:
+    config:
+      all: true
+      dir: tests/mocks/oauth/oauth2/discoverymock
+      structname: '{{.InterfaceName}}Mock'
+      pkgname: discoverymock
+      filename: "{{.InterfaceName}}_mock.go"
+
   github.com/asgardeo/thunder/internal/user:
     config:
       all: true
@@ -220,6 +228,15 @@ packages:
           structname: 'WebAuthnAuthnServiceInterfaceMock'
           pkgname: passkeymock
           filename: "WebAuthnAuthnServiceInterface_mock.go"
+
+  github.com/asgardeo/thunder/internal/authn/consent:
+    interfaces:
+      ConsentEnforcerServiceInterface:
+        config:
+          dir: tests/mocks/authn/consentenforcermock
+          structname: '{{.InterfaceName}}Mock'
+          pkgname: consentenforcermock
+          filename: "{{.InterfaceName}}_mock.go"
 
   github.com/asgardeo/thunder/internal/idp:
     config:

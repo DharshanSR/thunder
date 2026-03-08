@@ -25,9 +25,6 @@ const translations = {
   // Common namespace - Shared translations across all Thunder applications
   // ============================================================================
   common: {
-    // Product
-    'product.displayName': 'Thunder',
-
     // Actions
     'actions.add': 'Add',
     'actions.edit': 'Edit',
@@ -388,6 +385,9 @@ const translations = {
     'createWizard.userDetails.subtitle': 'Fill in the required information for the new user.',
     'createWizard.validationErrors.userTypeRequired': 'Please select a user type before proceeding.',
     'createWizard.validationErrors.ouIdMissing': 'Organization unit ID is missing for the selected user type.',
+    'createWizard.errors.noOuAccess':
+      'You do not have permission to access the organization units for the selected user type, and no organization unit could be resolved.',
+    'createWizard.errors.childOuProbeFailed': 'Unable to retrieve organization units for the selected user type.',
   },
 
   // ============================================================================
@@ -797,6 +797,24 @@ const translations = {
     'delete.title': 'Delete Application',
     'delete.message': 'Are you sure you want to delete this application? This action cannot be undone.',
     'delete.disclaimer': 'Warning: All associated data, configurations, and access tokens will be permanently removed.',
+    'regenerateSecret.dialog.title': 'Regenerate Client Secret',
+    'regenerateSecret.dialog.message':
+      'Are you sure you want to regenerate the client secret for this application? This will immediately invalidate the current client secret and generate a new one.',
+    'regenerateSecret.dialog.disclaimer':
+      'Warning: Regenerating the client secret will invalidate the current secret and the application may stop working until the new client secret is updated in its configuration.',
+    'regenerateSecret.dialog.confirmButton': 'Regenerate',
+    'regenerateSecret.dialog.regenerating': 'Regenerating...',
+    'regenerateSecret.dialog.error': 'Failed to regenerate client secret. Please try again.',
+    'regenerateSecret.success.title': 'Save Your New Client Secret',
+    'regenerateSecret.success.subtitle': "This is the only time you'll see this secret. Store it somewhere safe.",
+    'regenerateSecret.success.secretLabel': 'New Client Secret',
+    'regenerateSecret.success.copyButton': 'Copy to clipboard',
+    'regenerateSecret.success.toggleVisibility': 'Toggle secret visibility',
+    'regenerateSecret.success.copySecret': 'Copy Secret',
+    'regenerateSecret.success.copied': 'Copied to clipboard',
+    'regenerateSecret.success.securityReminder.title': 'Security Reminder',
+    'regenerateSecret.success.securityReminder.description':
+      'Never share your client secret publicly or store it in version control. If you believe your secret has been compromised, regenerate it immediately.',
     'onboarding.preview.title': 'Preview',
     'onboarding.preview.signin': 'Sign In',
     'onboarding.preview.username': 'Username',
@@ -1120,6 +1138,12 @@ const translations = {
     'edit.general.allowedUserTypes.placeholder': 'Select user types',
     'edit.general.allowedUserTypes.hint': 'Users of these types can authenticate with this application',
     'edit.general.applicationUrl.hint': 'The homepage URL of your application',
+    'edit.general.sections.dangerZone.title': 'Danger Zone',
+    'edit.general.sections.dangerZone.description': 'Actions in this section are irreversible. Proceed with caution.',
+    'edit.general.sections.dangerZone.regenerateSecret.title': 'Regenerate Client Secret',
+    'edit.general.sections.dangerZone.regenerateSecret.description':
+      'Regenerating the client secret will immediately invalidate the current client secret and cannot be undone.',
+    'edit.general.sections.dangerZone.regenerateSecret.button': 'Regenerate Client Secret',
 
     // Flows section
     'edit.flows.labels.authFlow': 'Authentication Flow',
@@ -1731,11 +1755,25 @@ const translations = {
       'A namespace typically represents a page or a section within a page. It helps group and organize related translation keys for better structure and maintainability.',
     'editor.textFields': 'Fields',
     'editor.rawJson': 'Raw JSON',
+    'editor.addKey': 'Add Key',
+    'editor.addKey.keyLabel': 'Key',
+    'editor.addKey.valueLabel': 'Value',
+    'editor.addKey.keyPlaceholder': 'e.g. my.translation.key',
+    'editor.addKey.valuePlaceholder': 'Translation value',
+    'editor.addKey.submit': 'Add',
+    'editor.addKey.cancel': 'Cancel',
+    'editor.addKey.duplicateKey': 'This key already exists.',
+    'editor.readOnlyKeys': 'Keys are fixed in this namespace. Only values can be edited.',
 
     'actions.saveChanges': 'Save Changes',
     'actions.discardChanges': 'Discard Changes',
     'actions.resetToDefault': 'Reset to Default',
     'preview.noTheme': 'No themes configured. Preview unavailable.',
+
+    'delete.title': 'Delete Language',
+    'delete.message': 'Are you sure you want to delete all custom translations for "{{language}}"? This action cannot be undone.',
+    'delete.disclaimer': 'All custom translations for this language will be permanently removed and reset to defaults.',
+    'delete.error': 'Failed to delete translations. Please try again.',
   },
 
   design: {

@@ -126,7 +126,7 @@ func registerServices(mux *http.ServeMux) jwt.JWTServiceInterface {
 	}
 	exporters = append(exporters, userExporter)
 
-	groupService, err := group.Initialize(mux, ouService, userService)
+	groupService, err := group.Initialize(mux, ouService, userService, ouAuthzService)
 	if err != nil {
 		logger.Fatal("Failed to initialize GroupService", log.Error(err))
 	}
@@ -167,7 +167,7 @@ func registerServices(mux *http.ServeMux) jwt.JWTServiceInterface {
 	// Initialize authentication services.
 	_, authSvcRegistry := authn.Initialize(
 		mux, mcpServer, idpService, jwtService, userService,
-		userProvider, otpService, authnProvider,
+		userProvider, otpService, authnProvider, consentService,
 	)
 
 	// Initialize flow and executor services.
